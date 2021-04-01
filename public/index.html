@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link type="text/css" rel="stylesheet" href="css/snake.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
+
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+    <title>React App</title>
+  </head>
+  <body>
+    <div id="header" class="alt">
+            <a class="logo" href="/"><strong>Snake AI Competition</strong> 2020</a>
+            <nav id="nav">
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li class="opener" style="-webkit-user-select: none; cursor: pointer; white-space: nowrap; opacity: 1;"><a href="docs" style="cursor: pointer;">Docs</a>
+                        <ul style="-webkit-user-select: none; display: none; position: absolute;" class="">
+
+                            <li style="white-space: nowrap;"><a href="docs#game" style="display: block; cursor: pointer;">Game Mechanics</a></li>
+                            <li style="white-space: nowrap;"><a href="docs#interact" style="display: block; cursor: pointer;">Input and Output</a></li>
+                            <li style="white-space: nowrap;"><a href="docs#scoring" style="display: block; cursor: pointer;">Scoring</a></li>
+                            <li style="white-space: nowrap;"><a href="docs#java" style="display: block; cursor: pointer;">Java</a></li>
+                            <li style="white-space: nowrap;"><a href="docs#cpp" style="display: block; cursor: pointer;">C++</a></li>
+                            <li style="white-space: nowrap;"><a href="docs#python" style="display: block; cursor: pointer;">Python</a></li>
+                            <li style="white-space: nowrap;"><a href="docs#config" style="display: block; cursor: pointer;">Configuration</a></li>
+                        </ul>
+                    <li><a href="download">Downloads</a></li>
+                    <li><a href="submit">Submit</a></li>
+                    <li class="active"><a href="watch">Watch</a></li>
+                    <li><a href="help">Help</a></li>
+                </ul>
+            </nav>
+        </div>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!-- Footer -->
+        <div id="footer">
+            <p class="copyright">Kludged together with duct tape and prayers
+                <br/>
+                © Runtime Terror
+                <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="Congrats! You found it..." id="hints">
+                    <i class="fa fa-television"></i>
+                </a>
+                <br/>University of the Witwatersrand, South Africa</p>
+        </div>
+
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+  </body>
+</html>
