@@ -1,16 +1,4 @@
-<<<<<<< Updated upstream
-import * as React from 'react';
-=======
-import React, { useState, useEffect } from "react";
-
-import ClientComponent from "./ClientComponent.js";
-
-
-//const app = require('express')();
-//const http = require('http').Server(app);
-//const io = require('socket.io')(http);
-
->>>>>>> Stashed changes
+import React, { useEffect, useState } from "react";
 
 const blockSize = 10;
 const gridSize = 50;
@@ -20,17 +8,6 @@ var currPos = 0;
 
 var viewerContext;
 
-<<<<<<< Updated upstream
-
-
-function random(min, max) {
-  const num = Math.floor(Math.random() * (max - min + 1)) + min;
-  return num;
-}
-
-
-=======
->>>>>>> Stashed changes
 function loop() {
   var loopX;
   var loopY;
@@ -73,31 +50,11 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
-function App() {
+
+export default function ViewerComponent() {
   const viewerRef = React.useRef<HTMLCanvasElement>(null);
   const [context, setContext] = React.useState<CanvasRenderingContext2D | null>(null);
 
-<<<<<<< Updated upstream
-  React.useEffect(() => {
-    if (viewerRef.current) {
-      const renderCtx = viewerRef.current.getContext('2d');
-
-      if (renderCtx) {
-        setContext(renderCtx);
-      }
-    }
-
-    if (context)
-    {
-      viewerContext = context;
-      loop();
-    }
-
-  }, [context]);
-
-
-  return (
-=======
     useEffect(() => {
 
       if (viewerRef.current) {
@@ -121,12 +78,6 @@ function App() {
 
   return (
 
->>>>>>> Stashed changes
-    <div
-      style={{
-        textAlign: 'center',
-      }}>
-      <h1>Snake Game</h1>
       <canvas
         id="viewer"
         ref={viewerRef}
@@ -137,20 +88,5 @@ function App() {
           marginTop: 10,
         }}
       ></canvas>
-<<<<<<< Updated upstream
-
-    </div>
-
-
-=======
-      <ClientComponent />
-    </div>
-
-
-
-
->>>>>>> Stashed changes
   );
 }
-
-export default App;
