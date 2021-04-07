@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 const io = require("socket.io-client");
 
-const ENDPOINT = "http://walleyco.de:3001";
+const ENDPOINT = "http://localhost:3001";
 var counter = 0;
 
 export default function ClientComponent() {
@@ -12,7 +12,7 @@ export default function ClientComponent() {
     const socket = io(ENDPOINT);
     socket.connect();
 
-    setResponse("Connecting to "+ENDPOINT+" "+socket.connected + " " +counter + " ");
+    setResponse("Connecting to "+ENDPOINT+". Connected? = "+socket.connected  + " ");
 
     socket.on("connect", () => {
       console.log(socket.id); // "G5p5..."
