@@ -10,7 +10,7 @@
 <div align="center">
 
 [![Build Status](https://travis-ci.org/dwyl/learn-travis.svg?branch=master)](https://travis-ci.org/dwyl/learn-travis)
-
+[![Coverage Status](https://coveralls.io/repos/github/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/badge.svg?branch=main)](https://coveralls.io/github/ChrisWalley/Runtime-Terror---Snake-Game-Viewer?branch=main)
 </div>
 
 Our ***quick guide*** to **Travis CI** (*Continuous Integration*)
