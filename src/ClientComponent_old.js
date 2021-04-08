@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import socketIOClient from "socket.io-client";
 
-const ENDPOINT = "http://localhost:3001";
+const ENDPOINT = "http://walleyco.de:3001";
 
 export default function ClientComponent() {
   const [response, setResponse] = useState("Connecting...");
