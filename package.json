@@ -24,8 +24,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "jest",
-    "coveralls": "jest --coverage && cat ./coverage/lcov.infog | coveralls"
-    "eject": "react-scripts eject",
+    "coveralls": "jest --coverage && cat ./coverage/lcov.infog | coveralls",
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
