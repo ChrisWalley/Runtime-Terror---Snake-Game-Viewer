@@ -146,11 +146,6 @@ function loop() {
       viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
     }
 
-
-
-
-
-
   }
 
   requestAnimationFrame(loop);
@@ -177,52 +172,57 @@ function App() {
         loop();
       }
 
-      const socket = socketIOClient(ENDPOINT);
-      socket.on("gamestate", data => {
-        setResponse("Gamestate "+data);
-        currPos = data;
-      });
-
-      socket.on("apple", data => {
-        applePos = data;
-      });
-
-      socket.on("snake", data => {
-        var arr = data.split(' ');
-        switch(arr[0]) {
-          case "0":
-              snake0 = data;
-            break;
-          case "1":
-              snake1 = data;
-            break;
-          case "2":
-              snake2 = data;
-            break;
-          case "3":
-              snake3 = data;
-          break;
-              }
-          });
-
-      socket.on("obstacle", data => {
-        var arr = data.split(' ');
-        switch(arr[0]) {
-          case "0":
-              obs0 = data;
-            break;
-          case "1":
-              obs1 = data;
-            break;
-          case "2":
-              obs2 = data;
-            break;
-              }
-          });
-
-
     }, [context]);
 
+
+        useEffect(() => {
+
+
+          const socket = socketIOClient(ENDPOINT);
+          socket.on("gamestate", data => {
+            setResponse("Gamestate "+data);
+            currPos = data;
+          });
+
+          socket.on("apple", data => {
+            applePos = data;
+          });
+
+          socket.on("snake", data => {
+            var arr = data.split(' ');
+            switch(arr[0]) {
+              case "0":
+                  snake0 = data;
+                break;
+              case "1":
+                  snake1 = data;
+                break;
+              case "2":
+                  snake2 = data;
+                break;
+              case "3":
+                  snake3 = data;
+              break;
+                  }
+              });
+
+          socket.on("obstacle", data => {
+            var arr = data.split(' ');
+            switch(arr[0]) {
+              case "0":
+                  obs0 = data;
+                break;
+              case "1":
+                  obs1 = data;
+                break;
+              case "2":
+                  obs2 = data;
+                break;
+                  }
+              });
+              return () => {socket.disconnect();};
+
+          }, []);
 
 
   return (

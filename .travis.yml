@@ -1,6 +1,8 @@
 language: node_js
 node_js:
  - "node"
+script:
+ - npm run coveralls
 env:
 - PORT=3000
 - NODE_ENV=TEST
