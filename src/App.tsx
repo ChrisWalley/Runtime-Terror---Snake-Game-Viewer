@@ -4,6 +4,7 @@ import socketIOClient from "socket.io-client";
 //import ClientComponent from "./ClientComponent.js";
 
 const ENDPOINT = "http://walleyco.de:3001";
+const parseCoords = require('./parseCoords');
 
 const blockSize = 10;
 const gridSize = 50;
@@ -22,6 +23,8 @@ var snake3 = "";
 var obs0 = "";
 var obs1 = "";
 var obs2 = "";
+
+var testVar = "";
 
 var viewerContext;
 
@@ -75,81 +78,70 @@ function loop() {
 
     //Obstacles
     viewerContext.fillStyle = 'rgb(108,108,108)';
+    var obsStartIndex = 1;
     var obsArr;
     var i;
 
     //Obstacle 1
-    obsArr = obs0.split(' ');
-    for (i = 1; i < obsArr.length; i++) {
-      var pos = obsArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+    var obsRects = parseCoords(obs0,obsStartIndex);
+    for (i = 0; i < obsRects.length; i++) {
+      viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
     //Obstacle 2
-    obsArr = obs1.split(' ');
-    for (i = 1; i < obsArr.length; i++) {
-      var pos = obsArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+    obsRects = parseCoords(obs1,obsStartIndex);
+    for (i = 0; i < obsRects.length; i++) {
+      viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
     //Obstacle 3
-    obsArr = obs2.split(' ');
-    for (i = 1; i < obsArr.length; i++) {
-      var pos = obsArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+
+    obsRects = parseCoords(obs2,obsStartIndex);
+    for (i = 0; i < obsRects.length; i++) {
+      viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
-    //Snakes
-    var snakeArr;
-    var i;
 
+    //Snakes
     //Snake 1
+    var snakeStartIndex = 4;
     viewerContext.fillStyle = 'rgb(208,0,108)';
 
-    snakeArr = snake0.split(' ');
-    for (i = 4; i < snakeArr.length; i++) {
-      var pos = snakeArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+    var snakeRects = parseCoords(snake0,snakeStartIndex);
+    for (i = 0; i < snakeRects.length; i++) {
+      viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
     //Snake 2
     viewerContext.fillStyle = 'rgb(108,50,108)';
 
-    snakeArr = snake1.split(' ');
-    for (i = 4; i < snakeArr.length; i++) {
-      var pos = snakeArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+    snakeRects = parseCoords(snake1,snakeStartIndex);
+    for (i = 0; i < snakeRects.length; i++) {
+      viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
     //Snake 3
     viewerContext.fillStyle = 'rgb(20,0,100)';
 
-    snakeArr = snake2.split(' ');
-    for (i = 4; i < snakeArr.length; i++) {
-      var pos = snakeArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+    snakeRects = parseCoords(snake2,snakeStartIndex);
+    for (i = 0; i < snakeRects.length; i++) {
+      viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
     //Snake 4
-    viewerContext.fillStyle = 'rgb(99,205,108)';
+    viewerContext.fillStyle = 'rgb(0,205,108)';
 
-    snakeArr = snake3.split(' ');
-    for (i = 4; i < snakeArr.length; i++) {
-      var pos = snakeArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+    snakeRects = parseCoords(snake3,snakeStartIndex);
+    for (i = 0; i < snakeRects.length; i++) {
+      viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
   }
 
   requestAnimationFrame(loop);
 }
+
+
 
 function App() {
   const viewerRef = React.useRef<HTMLCanvasElement>(null);
@@ -241,6 +233,9 @@ function App() {
           marginTop: 10,
         }}
       ></canvas>
+      <p>
+      <time dateTime={testVar}>{"TestVar: "+testVar}</time>
+      </p>
       <p>
       <time dateTime={response}>{response}</time>
       </p>
