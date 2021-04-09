@@ -27,5 +27,9 @@ test('tests parsing of a coordinate string', () => {
 });
 
 test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,21", 1)[0]['width']).toBe(2);
+  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,21", 1)[0]['width']).toBe(3);
+});
+
+test('tests parsing of a coordinate string', () => {
+  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,26", 1)[3]['height']).toBe(7);
 });
