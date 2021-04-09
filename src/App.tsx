@@ -174,11 +174,10 @@ function App() {
 
     }, [context]);
 
-
         useEffect(() => {
 
 
-          const socket = socketIOClient(ENDPOINT);
+          const socket = socketIOClient(ENDPOINT, { transports : ['websocket'] });
           socket.on("gamestate", data => {
             setResponse("Gamestate "+data);
             currPos = data;
