@@ -14,7 +14,6 @@ test('test header', () => {
   });
   const linkElement = screen.getByText(/Snake Game/i);
 
-
   expect(linkElement).toBeInTheDocument();
 });
 

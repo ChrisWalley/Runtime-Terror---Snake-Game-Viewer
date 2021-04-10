@@ -13,23 +13,25 @@ const startY = 10;
 
 var currPos = -1;
 
-var applePos = "0 0";
-
-var snake0 = "";
-var snake1 = "";
-var snake2 = "";
-var snake3 = "";
-
-var obs0 = "";
-var obs1 = "";
-var obs2 = "";
+var gameState =
+{
+  state: 0,
+  apple: "0 0",
+  obstacle0: "",
+  obstacle1: "",
+  obstacle2: "",
+  snake0: "",
+  snake1: "",
+  snake2: "",
+  snake3: ""
+};
 
 var testVar = "";
 
 var viewerContext;
 
 function loop() {
-  if(currPos>=0)
+  if(gameState.state>=0)
   {
 
     viewerContext.fillStyle = 'rgb(255, 255, 255)';     //Clears area to white
@@ -38,7 +40,7 @@ function loop() {
 
     viewerContext.fillStyle = 'rgb(0, 255, 0)';         //Draws progress bar at bottom
 
-    viewerContext.fillRect(startX, startY + gridSize*blockSize + 20, (currPos/(gridSize*gridSize))*(gridSize*blockSize), blockSize);
+    viewerContext.fillRect(startX, startY + gridSize*blockSize + 20, (gameState.state/(gridSize*gridSize))*(gridSize*blockSize), blockSize);
 
 
     viewerContext.strokeStyle = 'rgb(0, 0, 0)';         //Draws square around viewer and progress bar
@@ -60,7 +62,7 @@ function loop() {
 */
 
     //Apple
-    var appleCoords = applePos.split(' ');
+    var appleCoords = gameState.apple.split(' ');
     if(appleCoords.length > 1)
     {
       var appleX = parseInt(appleCoords[0]);
@@ -77,20 +79,20 @@ function loop() {
     var i;
 
     //Obstacle 1
-    var obsRects = parseCoords(obs0,obsStartIndex);
+    var obsRects = parseCoords(gameState.obstacle0,obsStartIndex);
     for (i = 0; i < obsRects.length; i++) {
       viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
     //Obstacle 2
-    obsRects = parseCoords(obs1,obsStartIndex);
+    obsRects = parseCoords(gameState.obstacle1,obsStartIndex);
     for (i = 0; i < obsRects.length; i++) {
       viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
     //Obstacle 3
 
-    obsRects = parseCoords(obs2,obsStartIndex);
+    obsRects = parseCoords(gameState.obstacle2,obsStartIndex);
     for (i = 0; i < obsRects.length; i++) {
       viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
@@ -101,7 +103,7 @@ function loop() {
     var snakeStartIndex = 4;
     viewerContext.fillStyle = 'rgb(208,0,108)';
 
-    var snakeRects = parseCoords(snake0,snakeStartIndex);
+    var snakeRects = parseCoords(gameState.snake0,snakeStartIndex);
     for (i = 0; i < snakeRects.length; i++) {
       viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
@@ -109,7 +111,7 @@ function loop() {
     //Snake 2
     viewerContext.fillStyle = 'rgb(108,50,108)';
 
-    snakeRects = parseCoords(snake1,snakeStartIndex);
+    snakeRects = parseCoords(gameState.snake1,snakeStartIndex);
     for (i = 0; i < snakeRects.length; i++) {
       viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
@@ -117,7 +119,7 @@ function loop() {
     //Snake 3
     viewerContext.fillStyle = 'rgb(20,0,100)';
 
-    snakeRects = parseCoords(snake2,snakeStartIndex);
+    snakeRects = parseCoords(gameState.snake2,snakeStartIndex);
     for (i = 0; i < snakeRects.length; i++) {
       viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
@@ -125,7 +127,7 @@ function loop() {
     //Snake 4
     viewerContext.fillStyle = 'rgb(0,205,108)';
 
-    snakeRects = parseCoords(snake3,snakeStartIndex);
+    snakeRects = parseCoords(gameState.snake3,snakeStartIndex);
     for (i = 0; i < snakeRects.length; i++) {
       viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
@@ -166,46 +168,11 @@ function App() {
 
           const socket = socketIOClient(ENDPOINT, { transports : ['websocket'] });
           socket.on("gamestate", data => {
-            setResponse("Gamestate "+data);
-            currPos = data;
+            gameState = data;
+            setResponse("Gamestate "+gameState.state);
+
           });
 
-          socket.on("apple", data => {
-            applePos = data;
-          });
-
-          socket.on("snake", data => {
-            var arr = data.split(' ');
-            switch(arr[0]) {
-              case "0":
-                  snake0 = data;
-                break;
-              case "1":
-                  snake1 = data;
-                break;
-              case "2":
-                  snake2 = data;
-                break;
-              case "3":
-                  snake3 = data;
-              break;
-                  }
-              });
-
-          socket.on("obstacle", data => {
-            var arr = data.split(' ');
-            switch(arr[0]) {
-              case "0":
-                  obs0 = data;
-                break;
-              case "1":
-                  obs1 = data;
-                break;
-              case "2":
-                  obs2 = data;
-                break;
-                  }
-              });
               return () => {socket.disconnect();};
 
           }, []);
@@ -228,7 +195,11 @@ function App() {
           marginTop: 10,
         }}
       ></canvas>
+      <p>
+      <time dateTime={response}>{response}</time>
+      </p>
     </div>
+
   );
 }
 
