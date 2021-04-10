@@ -18,18 +18,6 @@ test('test header', () => {
   expect(linkElement).toBeInTheDocument();
 });
 
-
-test('test footer', () => {
-
-  act(() => {
-    render(<App />);
-  });
-  const linkElement = screen.getByRef(/viewerRef/i);
-
-
-  expect(linkElement).toBeInTheDocument();
-});
-
 test('tests parsing of a coordinate string', () => {
   expect(parseCoords("0 30,21 29,21 28,21 27,21 26,21", 1)[0]['startX']).toBe(29);
 });
@@ -43,23 +31,23 @@ test('tests parsing of a coordinate string', () => {
 });
 
 test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,21", 1)[0]['width']).toBe(3);
+  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,21", 1)[0]['width']).toBe(2);
 });
 
 test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,26", 1)[3]['height']).toBe(7);
+  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,26", 1)[3]['height']).toBe(6);
 });
 
 test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,26", 1)[3]['height']).toBe(7);
-});
-
-
-test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 2 alive 4 30,21 29,21 28,21 27,21 26,26", 4)[3]['height']).toBe(7);
+  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,26", 1)[3]['height']).toBe(6);
 });
 
 
 test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,26", 1)[3]['height']).toBe(7);
+  expect(parseCoords("0 2 alive 4 30,21 29,21 28,21 27,21 26,26", 4)[3]['height']).toBe(6);
+});
+
+
+test('tests parsing of a coordinate string', () => {
+  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,26", 1)[3]['height']).toBe(6);
 });
