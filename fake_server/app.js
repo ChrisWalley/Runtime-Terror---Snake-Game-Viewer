@@ -32,7 +32,10 @@ const io = socketIo(server);
 let interval;
 
 io.on("connection", (socket) => {
-  console.log("New client connected");
+  var address = socket.handshake.address;
+
+  console.log('New connection from ' + address.address + ':' + address.port);
+
   if (interval) {
     clearInterval(interval);
   }
