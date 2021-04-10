@@ -21,23 +21,23 @@ function parseCoords(corrdsString, startIndex)
     if(oldPos[0] < newPos[0])//X position and width
     {
       startX = oldPos[0];
-      width =  newPos[0] -  oldPos[0] + 2;
+      width =  newPos[0] -  oldPos[0] + 1;
     }
     else
     {
       startX = newPos[0];
-      width =  oldPos[0] -  newPos[0] + 2;
+      width =  oldPos[0] -  newPos[0] + 1;
     }
 
     if(oldPos[1] < newPos[1])//Y position and height
     {
       startY = oldPos[1];
-      height =  newPos[1] -  oldPos[1] + 2;
+      height =  newPos[1] -  oldPos[1] + 1;
     }
     else
     {
       startY = newPos[1];
-      height =  oldPos[1] -  newPos[1] + 2;
+      height =  oldPos[1] -  newPos[1] + 1;
     }
 
     let rect = {

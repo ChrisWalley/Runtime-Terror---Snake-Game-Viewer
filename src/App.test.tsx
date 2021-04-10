@@ -18,6 +18,18 @@ test('test header', () => {
   expect(linkElement).toBeInTheDocument();
 });
 
+
+test('test footer', () => {
+
+  act(() => {
+    render(<App />);
+  });
+  const linkElement = screen.getByRef(/viewerRef/i);
+
+
+  expect(linkElement).toBeInTheDocument();
+});
+
 test('tests parsing of a coordinate string', () => {
   expect(parseCoords("0 30,21 29,21 28,21 27,21 26,21", 1)[0]['startX']).toBe(29);
 });

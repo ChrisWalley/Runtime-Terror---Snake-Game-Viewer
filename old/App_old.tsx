@@ -31,6 +31,12 @@ var viewerContext;
 function loop() {
   if(currPos>=0)
   {
+    var loopX;
+    var loopY;
+
+    var currX = ~~(currPos%gridSize);
+    var currY = ~~(currPos/gridSize);
+
 
     viewerContext.fillStyle = 'rgb(255, 255, 255)';     //Clears area to white
     viewerContext.fillRect(startX,startY, gridSize*blockSize, gridSize*blockSize);
@@ -46,7 +52,7 @@ function loop() {
     viewerContext.strokeRect(startX,startY + gridSize*blockSize + 20, gridSize*blockSize, 10);
 
 
-/*
+
 
     viewerContext.strokeStyle = 'rgb(185, 185, 185)';
 
@@ -57,7 +63,7 @@ function loop() {
         viewerContext.strokeRect(startX + loopX*blockSize, startY + loopY*blockSize, blockSize, blockSize);
       }
     }
-*/
+
 
     //Apple
     var appleCoords = applePos.split(' ');
@@ -133,8 +139,6 @@ function loop() {
   }
 
   requestAnimationFrame(loop);
-
-
 }
 
 
@@ -163,6 +167,7 @@ function App() {
     }, [context]);
 
         useEffect(() => {
+
 
           const socket = socketIOClient(ENDPOINT, { transports : ['websocket'] });
           socket.on("gamestate", data => {
@@ -228,41 +233,42 @@ function App() {
           marginTop: 10,
         }}
       ></canvas>
+      <p>
+      <time dateTime={testVar}>{"TestVar: "+testVar}</time>
+      </p>
+      <p>
+      <time dateTime={response}>{response}</time>
+      </p>
+      <p>
+      <time dateTime={applePos}>{"Apple: "+applePos}</time>
+      </p>
+      <p>
+      <time dateTime={snake0}>{"Snake 1: "+snake0}</time>
+      </p>
+      <p>
+      <time dateTime={snake1}>{"Snake 2: "+snake1}</time>
+      </p>
+      <p>
+      <time dateTime={snake2}>{"Snake 3: "+snake2}</time>
+      </p>
+      <p>
+      <time dateTime={snake3}>{"Snake 4: "+snake3}</time>
+      </p>
+      <p>
+      <time dateTime={obs0}>{"Obstacle 1: "+obs0}</time>
+      </p>
+      <p>
+      <time dateTime={obs1}>{"Obstacle 2: "+obs1}</time>
+      </p>
+      <p>
+      <time dateTime={obs2}>{"Obstacle 3: "+obs2}</time>
+      </p>
     </div>
+
+
+
+
   );
 }
 
 export default App;
-
-/*
-<p>
-<time dateTime={testVar}>{"TestVar: "+testVar}</time>
-</p>
-<p>
-<time dateTime={response}>{response}</time>
-</p>
-<p>
-<time dateTime={applePos}>{"Apple: "+applePos}</time>
-</p>
-<p>
-<time dateTime={snake0}>{"Snake 1: "+snake0}</time>
-</p>
-<p>
-<time dateTime={snake1}>{"Snake 2: "+snake1}</time>
-</p>
-<p>
-<time dateTime={snake2}>{"Snake 3: "+snake2}</time>
-</p>
-<p>
-<time dateTime={snake3}>{"Snake 4: "+snake3}</time>
-</p>
-<p>
-<time dateTime={obs0}>{"Obstacle 1: "+obs0}</time>
-</p>
-<p>
-<time dateTime={obs1}>{"Obstacle 2: "+obs1}</time>
-</p>
-<p>
-<time dateTime={obs2}>{"Obstacle 3: "+obs2}</time>
-</p>
-*/
