@@ -11,7 +11,7 @@ var gameState = 0;
 var gameState =
 {
   state: 0,
-  apple: "8 16",
+  apple: "16 40",
   obstacle0: "1 16,32 16,33 16,34 16,35 16,36",
   obstacle1: "2 47,26 46,26 45,26 44,26 43,26",
   obstacle2: "0 30,21 29,21 28,21 27,21 26,21",

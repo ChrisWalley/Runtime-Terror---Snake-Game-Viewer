@@ -11,12 +11,11 @@ const gridSize = 50;
 const startX = 10;
 const startY = 10;
 
-var currPos = -1;
 
 var gameState =
 {
-  state: 0,
-  apple: "0 0",
+  state: -1,
+  apple: "",
   obstacle0: "",
   obstacle1: "",
   obstacle2: "",
@@ -26,40 +25,56 @@ var gameState =
   snake3: ""
 };
 
-var testVar = "";
+var gameColours =
+{
+  background: 'rgb(255, 255, 255)',
+  progressBar: 'rgb(0, 255, 0)',
+  border: 'rgb(0, 0, 0)',
+  cellLines: 'rgb(185, 185, 185)',
+  apple: 'rgb(218,165,32)',
+  obstacles:'rgb(108,108,108)',
+  snake0:'rgb(208,0,108)',
+  snake1: 'rgb(108,50,108)',
+  snake2: 'rgb(20,0,100)',
+  snake3: 'rgb(0,205,108)'
+}
 
 var viewerContext;
 
-function loop() {
+function drawGameboard() {
   if(gameState.state>=0)
   {
 
-    viewerContext.fillStyle = 'rgb(255, 255, 255)';     //Clears area to white
+    viewerContext.fillStyle = gameColours.background;     //Clears area
     viewerContext.fillRect(startX,startY, gridSize*blockSize, gridSize*blockSize);
     viewerContext.fillRect(startX,startY + gridSize*blockSize + 20, gridSize*blockSize, 10);
 
-    viewerContext.fillStyle = 'rgb(0, 255, 0)';         //Draws progress bar at bottom
+    viewerContext.fillStyle = gameColours.progressBar;         //Draws progress bar at bottom
 
     viewerContext.fillRect(startX, startY + gridSize*blockSize + 20, (gameState.state/(gridSize*gridSize))*(gridSize*blockSize), blockSize);
 
 
-    viewerContext.strokeStyle = 'rgb(0, 0, 0)';         //Draws square around viewer and progress bar
+    viewerContext.strokeStyle = gameColours.border;          //Draws square around viewer and progress bar
     viewerContext.strokeRect(startX,startY, gridSize*blockSize, gridSize*blockSize);
     viewerContext.strokeRect(startX,startY + gridSize*blockSize + 20, gridSize*blockSize, 10);
 
 
 /*
-
-    viewerContext.strokeStyle = 'rgb(185, 185, 185)';
-
-    for(loopX = 0; loopX < gridSize; loopX++)     //Draws squares around cells
+    if(drawCellsVar)
     {
-      for(loopY = 0; loopY < gridSize; loopY++)
+      viewerContext.strokeStyle = gameColours.cellLines;
+      var loopX;
+      var loopY;
+      for(loopX = 0; loopX < gridSize; loopX++)     //Draws squares around cells
       {
-        viewerContext.strokeRect(startX + loopX*blockSize, startY + loopY*blockSize, blockSize, blockSize);
+        for(loopY = 0; loopY < gridSize; loopY++)
+        {
+          viewerContext.strokeRect(startX + loopX*blockSize, startY + loopY*blockSize, blockSize, blockSize);
+        }
       }
     }
 */
+
 
     //Apple
     var appleCoords = gameState.apple.split(' ');
@@ -67,30 +82,29 @@ function loop() {
     {
       var appleX = parseInt(appleCoords[0]);
       var appleY = parseInt(appleCoords[1]);
-      viewerContext.fillStyle = 'rgb(218,165,32)';
+      viewerContext.fillStyle = gameColours.apple;
       viewerContext.fillRect(startX + appleX*blockSize, startY +  appleY*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
     }
 
 
     //Obstacles
-    viewerContext.fillStyle = 'rgb(108,108,108)';
+    viewerContext.fillStyle = gameColours.obstacles;
     var obsStartIndex = 1;
-    var obsArr;
     var i;
 
-    //Obstacle 1
+    //Obstacle 0
     var obsRects = parseCoords(gameState.obstacle0,obsStartIndex);
     for (i = 0; i < obsRects.length; i++) {
       viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
-    //Obstacle 2
+    //Obstacle 1
     obsRects = parseCoords(gameState.obstacle1,obsStartIndex);
     for (i = 0; i < obsRects.length; i++) {
       viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
-    //Obstacle 3
+    //Obstacle 2
 
     obsRects = parseCoords(gameState.obstacle2,obsStartIndex);
     for (i = 0; i < obsRects.length; i++) {
@@ -99,33 +113,33 @@ function loop() {
 
 
     //Snakes
-    //Snake 1
+    //Snake 0
     var snakeStartIndex = 4;
-    viewerContext.fillStyle = 'rgb(208,0,108)';
+    viewerContext.fillStyle = gameColours.snake0;
 
     var snakeRects = parseCoords(gameState.snake0,snakeStartIndex);
     for (i = 0; i < snakeRects.length; i++) {
       viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
-    //Snake 2
-    viewerContext.fillStyle = 'rgb(108,50,108)';
+    //Snake 1
+    viewerContext.fillStyle = gameColours.snake1;
 
     snakeRects = parseCoords(gameState.snake1,snakeStartIndex);
     for (i = 0; i < snakeRects.length; i++) {
       viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
-    //Snake 3
-    viewerContext.fillStyle = 'rgb(20,0,100)';
+    //Snake 2
+    viewerContext.fillStyle = gameColours.snake2;
 
     snakeRects = parseCoords(gameState.snake2,snakeStartIndex);
     for (i = 0; i < snakeRects.length; i++) {
       viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
-    //Snake 4
-    viewerContext.fillStyle = 'rgb(0,205,108)';
+    //Snake 3
+    viewerContext.fillStyle = gameColours.snake3;
 
     snakeRects = parseCoords(gameState.snake3,snakeStartIndex);
     for (i = 0; i < snakeRects.length; i++) {
@@ -134,8 +148,7 @@ function loop() {
 
   }
 
-  requestAnimationFrame(loop);
-
+  requestAnimationFrame(drawGameboard);
 
 }
 
@@ -145,6 +158,7 @@ function App() {
   const viewerRef = React.useRef<HTMLCanvasElement>(null);
   const [context, setContext] = React.useState<CanvasRenderingContext2D | null>(null);
   const [response, setResponse] = useState("Connecting...");
+  //const [drawCells, setDrawCells] = useState(drawCellsVar);
 
     useEffect(() => {
 
@@ -159,9 +173,9 @@ function App() {
       if (context)
       {
         viewerContext = context;
-        loop();
+        drawGameboard();
       }
-
+      //drawCellsVar = drawCells;
     }, [context]);
 
         useEffect(() => {
@@ -196,7 +210,7 @@ function App() {
         }}
       ></canvas>
       <p>
-      <time dateTime={response}>{response}</time>
+      {response}
       </p>
     </div>
 
@@ -206,6 +220,11 @@ function App() {
 export default App;
 
 /*
+<p>
+  <button onClick={() => setDrawCells(false)}>
+    Toggle Cells
+  </button>
+</p>
 <p>
 <time dateTime={testVar}>{"TestVar: "+testVar}</time>
 </p>

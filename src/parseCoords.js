@@ -4,7 +4,7 @@ function parseCoords(corrdsString, startIndex)
   let rectsArr = [];// as any;
 
   var coordsArr = corrdsString.split(' ');
-  if(coordsArr.length <= startIndex)
+  if(corrdsString.length === 0 || coordsArr.length <= startIndex)
   {
     return rectsArr;
   }

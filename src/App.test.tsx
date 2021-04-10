@@ -17,36 +17,15 @@ test('test header', () => {
   expect(linkElement).toBeInTheDocument();
 });
 
-test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,21", 1)[0]['startX']).toBe(29);
-});
-
-test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,21", 1)[2]['startX']).toBe(27);
-});
-
-test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 30,21 29,28 28,21 27,21 26,21", 1)[2]['startY']).toBe(21);
-});
-
-test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,21", 1)[0]['width']).toBe(2);
-});
-
-test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,26", 1)[3]['height']).toBe(6);
-});
-
-test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,26", 1)[3]['height']).toBe(6);
+test('Tests parsing coordinates - Object', () => {
+  expect(parseCoords("0 1,1 1,2 2,2 2,3 3,3", 1)[0]['startX']).toBe(1);
 });
 
 
-test('tests parsing of a coordinate string', () => {
+test('Tests parsing coordinates - Snake', () => {
   expect(parseCoords("0 2 alive 4 30,21 29,21 28,21 27,21 26,26", 4)[3]['height']).toBe(6);
 });
 
-
-test('tests parsing of a coordinate string', () => {
-  expect(parseCoords("0 30,21 29,21 28,21 27,21 26,26", 1)[3]['height']).toBe(6);
+test('Tests parsing coordinates - Empty', () => {
+  expect(parseCoords("", 1).length).toBe(0);
 });
