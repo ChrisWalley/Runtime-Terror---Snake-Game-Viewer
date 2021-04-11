@@ -11,6 +11,14 @@ const gridSize = 50;
 const startX = 10;
 const startY = 10;
 
+var currentGamestate = -1
+var realtimeGamestate = -1
+
+var realtime = true;
+var paused = false;
+var addedClickEvent = false;
+
+let gameStateArr = new Object();
 
 var gameState =
 {
@@ -28,7 +36,8 @@ var gameState =
 var gameColours =
 {
   background: 'rgb(255, 255, 255)',
-  progressBar: 'rgb(0, 255, 0)',
+  progressBarGreen: 'rgb(0, 255, 0)',
+  progressBarBlue: 'rgb(0, 0, 255)',
   border: 'rgb(0, 0, 0)',
   cellLines: 'rgb(185, 185, 185)',
   apple: 'rgb(218,165,32)',
@@ -39,20 +48,40 @@ var gameColours =
   snake3: 'rgb(0,205,108)'
 }
 
+var progBar = {
+  x:0,
+  y:0,
+  width:0,
+  height:0
+}
+
+var viewerX = 0;
+var viewerY = 0;
+
 var viewerContext;
 
+var success = false;
 function drawGameboard() {
-  if(gameState.state>=0)
+  if(gameState!=null && gameState.state>=0)
   {
 
     viewerContext.fillStyle = gameColours.background;     //Clears area
     viewerContext.fillRect(startX,startY, gridSize*blockSize, gridSize*blockSize);
     viewerContext.fillRect(startX,startY + gridSize*blockSize + 20, gridSize*blockSize, 10);
 
-    viewerContext.fillStyle = gameColours.progressBar;         //Draws progress bar at bottom
+    viewerContext.fillStyle = gameColours.progressBarGreen;         //Draws progress bar at bottom - current position
+    viewerContext.fillRect(startX, startY + gridSize*blockSize + 20, (currentGamestate/(gridSize*gridSize))*(gridSize*blockSize), blockSize);
 
-    viewerContext.fillRect(startX, startY + gridSize*blockSize + 20, (gameState.state/(gridSize*gridSize))*(gridSize*blockSize), blockSize);
+    viewerContext.fillStyle = gameColours.progressBarBlue;         //Draws progress bar at bottom - real gametime
+    viewerContext.fillRect(startX + (realtimeGamestate/(gridSize*gridSize))*(gridSize*blockSize), startY + gridSize*blockSize + 20, 5, blockSize);
 
+    progBar =
+    {
+      x:startX,
+      y:startY + gridSize*blockSize + 20,
+      width:(realtimeGamestate/(gridSize*gridSize))*(gridSize*blockSize),
+      height:blockSize
+    }
 
     viewerContext.strokeStyle = gameColours.border;          //Draws square around viewer and progress bar
     viewerContext.strokeRect(startX,startY, gridSize*blockSize, gridSize*blockSize);
@@ -113,8 +142,6 @@ function drawGameboard() {
 
     var snakeRects = parseCoords(gameState.snake0,snakeStartIndex);
     for (i = 0; i < snakeRects.length; i++) {
-      console.log("Drawing from "+snakeRects[i]['startX'] + " with width "+snakeRects[i]['width']*blockSize);
-      console.log("Drawing from "+snakeRects[i]['startY'] + " with height "+snakeRects[i]['height']*blockSize);
       viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
@@ -141,14 +168,29 @@ function drawGameboard() {
     for (i = 0; i < snakeRects.length; i++) {
       viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
-
+    success = true;
   }
 
   requestAnimationFrame(drawGameboard);
-
+  return success;
 }
 
+function clickEventListener(event) {
+  /*
+  console.log("clicked "+event.pageX);
+  console.log("clicked "+event.pageY);
+  */
+  var x = event.pageX - viewerX;
+  var y = event.pageY - viewerY;
 
+  if (y > progBar.y && y < progBar.y + progBar.height
+             && x > progBar.x && x < progBar.x + progBar.width) {
+             console.log('clicked progress  bar');
+             realtime = false;
+             currentGamestate = (x- startX)*gridSize/blockSize;
+         }
+
+}
 
 function App() {
   const viewerRef = React.useRef<HTMLCanvasElement>(null);
@@ -159,6 +201,13 @@ function App() {
     useEffect(() => {
 
       if (viewerRef.current) {
+        if(!addedClickEvent)
+        {
+          viewerRef.current.addEventListener('click', clickEventListener, false);
+          viewerX = viewerRef.current.offsetLeft + viewerRef.current.clientLeft;
+          viewerY = viewerRef.current.offsetTop + viewerRef.current.clientTop;
+          addedClickEvent = true;
+        }
         const renderCtx = viewerRef.current.getContext('2d');
 
         if (renderCtx) {
@@ -178,8 +227,18 @@ function App() {
 
           const socket = socketIOClient(ENDPOINT, { transports : ['websocket'] });
           socket.on("gamestate", data => {
-            gameState = data;
-            setResponse("Gamestate "+gameState.state);
+            gameStateArr[data.state] = data;
+            realtimeGamestate = data.state;
+            if(realtime)
+            {
+              currentGamestate = realtimeGamestate;
+            }
+            else if(!paused)
+            {
+              currentGamestate++;
+            }
+            gameState = gameStateArr[currentGamestate];
+            setResponse("Realtime: "+data.state + " Viewing: "+currentGamestate);
 
           });
 

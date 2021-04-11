@@ -7,11 +7,13 @@ const index = require("./routes/index");
 const gridSize = 50;
 
 var gameState = 0;
+var appleX = 0;
+var appleY = 0;
 
 var gameState =
 {
   state: 0,
-  apple: "10 6",
+  apple: appleX+" "+appleY,
   obstacle0: "1 16,32 16,33 16,34 16,35 16,36",
   obstacle1: "2 47,26 46,26 45,26 44,26 43,26",
   obstacle2: "0 30,21 29,21 28,21 27,21 26,21",
@@ -49,7 +51,18 @@ io.on("connection", (socket) => {
 const getApiAndEmit = socket => {
   gameState.state++;
   gameState.state = gameState.state%(gridSize*gridSize);
-
+  appleX++;
+  if(appleX>=gridSize)
+  {
+    appleX = 0;
+    appleY++;
+  }
+  if(appleY>=gridSize)
+  {
+    appleX = 0;
+    appleY = 0;
+  }
+  gameState.apple = (appleX+" "+appleY);
   // Emitting a new message. Will be consumed by the client
   socket.emit("gamestate", gameState);
 
