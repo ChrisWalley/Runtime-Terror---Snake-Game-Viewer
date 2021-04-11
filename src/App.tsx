@@ -18,6 +18,10 @@ var currentGamestate = -1
 var realtimeGamestate = -1
 
 var lastGameRef = -1;
+var lastGameSnake0Score = -1;
+var lastGameSnake1Score = -1;
+var lastGameSnake2Score = -1;
+var lastGameSnake3Score = -1;
 
 var realtime = true;
 var paused = false;
@@ -41,7 +45,11 @@ var gameState =
   snake0: "",
   snake1: "",
   snake2: "",
-  snake3: ""
+  snake3: "",
+  snake0Score: -1,
+  snake1Score: -1,
+  snake2Score: -1,
+  snake3Score: -1
 };
 
 var gameColours =
@@ -196,16 +204,16 @@ function drawGameboard() {
     viewerContext.fillText("Player:", col1X, colStartY+100);
     viewerContext.fillText("Score:", col2X, colStartY+100);
     viewerContext.fillText("Snake 1", col1X, colStartY+200);
-    viewerContext.fillText("0", col2X, colStartY+200);
+    viewerContext.fillText(lastGameSnake0Score, col2X, colStartY+200);
 
     viewerContext.fillText("Snake 2", col1X, colStartY+250);
-    viewerContext.fillText("0", col2X, colStartY+250);
+    viewerContext.fillText(lastGameSnake1Score, col2X, colStartY+250);
 
     viewerContext.fillText("Snake 3", col1X, colStartY+300);
-    viewerContext.fillText("0", col2X, colStartY+300);
+    viewerContext.fillText(lastGameSnake2Score, col2X, colStartY+300);
 
     viewerContext.fillText("Snake 4", col1X, colStartY+350);
-    viewerContext.fillText("0", col2X, colStartY+350);
+    viewerContext.fillText(lastGameSnake3Score, col2X, colStartY+350);
 
   }
 
@@ -309,6 +317,10 @@ function App() {
 
             cacheGame(gameRef, gameStateArr);
             lastGameRef = gameRef;
+            lastGameSnake0Score = gameState.snake0Score;
+            lastGameSnake1Score = gameState.snake1Score;
+            lastGameSnake2Score = gameState.snake2Score;
+            lastGameSnake3Score = gameState.snake3Score;
             gameState =
             {
               ref: -1,
@@ -320,7 +332,11 @@ function App() {
               snake0: "",
               snake1: "",
               snake2: "",
-              snake3: ""
+              snake3: "",
+              snake0Score: -1,
+              snake1Score: -1,
+              snake2Score: -1,
+              snake3Score: -1
             };
             waitingForFirstGamestate = true;
             gameStateArr = {};
@@ -352,7 +368,11 @@ function App() {
               snake0: "",
               snake1: "",
               snake2: "",
-              snake3: ""
+              snake3: "",
+              snake0Score: -1,
+              snake1Score: -1,
+              snake2Score: -1,
+              snake3Score: -1
             };
             waitingForFirstGamestate = true;
             gameStateArr = {};
