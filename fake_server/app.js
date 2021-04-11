@@ -10,8 +10,11 @@ var gameState = 0;
 var appleX = 0;
 var appleY = 0;
 
+var gameRef = 0;
+
 var gameState =
 {
+  ref: gameRef,
   state: 0,
   apple: appleX+" "+appleY,
   obstacle0: "1 16,32 16,33 16,34 16,35 16,36",
@@ -37,16 +40,25 @@ io.on("connection", (socket) => {
   var address = socket.handshake.address;
 
   console.log('New connection from ' + address.address + ':' + address.port);
-
+  socket.emit("startGame", gameRef);
   if (interval) {
     clearInterval(interval);
   }
   interval = setInterval(() => getApiAndEmit(socket), 50);
+  console.log("Starting new game "+gameRef);
   socket.on("disconnect", () => {
     console.log("Client disconnected");
     clearInterval(interval);
   });
 });
+
+function wait(ms){
+   var start = new Date().getTime();
+   var end = start;
+   while(end < start + ms) {
+     end = new Date().getTime();
+  }
+}
 
 const getApiAndEmit = socket => {
   gameState.state++;
@@ -57,14 +69,26 @@ const getApiAndEmit = socket => {
     appleX = 0;
     appleY++;
   }
+  //if(appleY>=gridSize)
   if(appleY>=gridSize)
   {
     appleX = 0;
     appleY = 0;
+    socket.emit("endGame", gameRef);
+    var loop;
+    wait(10000);
+
+    gameRef++;
+    gameState.ref = gameRef;
+    console.log("Starting new game "+gameRef);
+    socket.emit("startGame", gameRef);
+
   }
-  gameState.apple = (appleX+" "+appleY);
+
+    gameState.apple = (appleX+" "+appleY);
+    socket.emit("gamestate", gameState);
+
   // Emitting a new message. Will be consumed by the client
-  socket.emit("gamestate", gameState);
 
 };
 
