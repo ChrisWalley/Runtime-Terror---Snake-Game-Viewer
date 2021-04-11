@@ -59,9 +59,6 @@ function drawGameboard() {
     viewerContext.strokeRect(startX,startY + gridSize*blockSize + 20, gridSize*blockSize, 10);
 
 
-/*
-    if(drawCellsVar)
-    {
       viewerContext.strokeStyle = gameColours.cellLines;
       var loopX;
       var loopY;
@@ -72,9 +69,6 @@ function drawGameboard() {
           viewerContext.strokeRect(startX + loopX*blockSize, startY + loopY*blockSize, blockSize, blockSize);
         }
       }
-    }
-*/
-
 
     //Apple
     var appleCoords = gameState.apple.split(' ');
@@ -119,6 +113,8 @@ function drawGameboard() {
 
     var snakeRects = parseCoords(gameState.snake0,snakeStartIndex);
     for (i = 0; i < snakeRects.length; i++) {
+      console.log("Drawing from "+snakeRects[i]['startX'] + " with width "+snakeRects[i]['width']*blockSize);
+      console.log("Drawing from "+snakeRects[i]['startY'] + " with height "+snakeRects[i]['height']*blockSize);
       viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
