@@ -18,26 +18,27 @@ function parseCoords(corrdsString, startIndex)
     var width;
     var height;
 
-    if(oldPos[0] < newPos[0])//X position and width
+//15,12 15,7 5,7
+    if(parseInt(oldPos[0]) < parseInt(newPos[0]))//X position and width
     {
       startX = oldPos[0];
-      width =  newPos[0] -  oldPos[0] + 1;
+      width =  parseInt(newPos[0]) -  parseInt(oldPos[0]) + 1;
     }
     else
     {
       startX = newPos[0];
-      width =  oldPos[0] -  newPos[0] + 1;
+      width =  parseInt(oldPos[0]) -  parseInt(newPos[0]) + 1;
     }
 
-    if(oldPos[1] < newPos[1])//Y position and height
+    if(parseInt(oldPos[1]) < parseInt(newPos[1]))//Y position and height
     {
       startY = oldPos[1];
-      height =  newPos[1] -  oldPos[1] + 1;
+      height =  parseInt(newPos[1]) -  parseInt(oldPos[1]) + 1;
     }
     else
     {
       startY = newPos[1];
-      height =  oldPos[1] -  newPos[1] + 1;
+      height =  parseInt(oldPos[1]) -  parseInt(newPos[1]) + 1;
     }
 
     let rect = {
