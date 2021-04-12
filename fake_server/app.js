@@ -157,6 +157,7 @@ const getApiAndEmit = socket => {
 
   if(gameState.state>=gridSize*gridSize)
   {
+    gameState.state=0;
     socket.emit("endGame", gameRef);
     var loop;
     wait(10000);
