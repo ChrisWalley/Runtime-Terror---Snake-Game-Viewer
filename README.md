@@ -19,4 +19,5 @@ Branch Features:
 View it here: http://walleyco.de:3000/
 
 
-![Capture](https://user-images.githubusercontent.com/19406443/113909764-57668a00-97d8-11eb-83d0-c1037278f1fc.JPG)
+![Capture](https://user-images.githubusercontent.com/19406443/114347236-ecfd7300-9b64-11eb-9372-2f828fb7e95a.PNG)
+
