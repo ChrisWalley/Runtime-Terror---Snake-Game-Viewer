@@ -6,14 +6,37 @@ import socketIOClient from "socket.io-client";
 const ENDPOINT = "http://walleyco.de:3001";
 const parseCoords = require('./parseCoords');
 
+const canvasHeight = 550;
+const canvasWidth = 520;
+
 const blockSize = 10;
 const gridSize = 50;
 const startX = 10;
 const startY = 10;
 
+var currentGamestate = -1
+var realtimeGamestate = -1
+
+var lastGameRef = -1;
+var lastGameSnake0Score = -1;
+var lastGameSnake1Score = -1;
+var lastGameSnake2Score = -1;
+var lastGameSnake3Score = -1;
+
+var realtime = true;
+var paused = false;
+var addedClickEvent = false;
+
+let gameStateArr = {};
+//let cachedGames = [] as any;
+
+
+var startedViewingGamestate = 0;
+var waitingForFirstGamestate = true;
 
 var gameState =
 {
+  ref: -1,
   state: -1,
   apple: "",
   obstacle0: "",
@@ -22,13 +45,19 @@ var gameState =
   snake0: "",
   snake1: "",
   snake2: "",
-  snake3: ""
+  snake3: "",
+  snake0Score: -1,
+  snake1Score: -1,
+  snake2Score: -1,
+  snake3Score: -1
 };
 
 var gameColours =
 {
   background: 'rgb(255, 255, 255)',
-  progressBar: 'rgb(0, 255, 0)',
+  progressBarGreen: 'rgb(0, 255, 0)',
+  progressBarBlue: 'rgb(0, 0, 255)',
+  progressBarRed: 'rgb(255, 0, 0)',
   border: 'rgb(0, 0, 0)',
   cellLines: 'rgb(185, 185, 185)',
   apple: 'rgb(218,165,32)',
@@ -39,20 +68,45 @@ var gameColours =
   snake3: 'rgb(0,205,108)'
 }
 
+var progBar = {
+  x:0,
+  y:0,
+  width:0,
+  height:0
+}
+
+var viewerX = 0;
+var viewerY = 0;
+
+
 var viewerContext;
 
 function drawGameboard() {
-  if(gameState.state>=0)
+
+  viewerContext.fillStyle = gameColours.background;     //Clears area
+  viewerContext.fillRect(0,0, canvasWidth, canvasHeight);
+  //viewerContext.fillRect(startX,startY, gridSize*blockSize, gridSize*blockSize);
+  viewerContext.fillRect(startX,startY + gridSize*blockSize + 20, gridSize*blockSize, 10);
+
+  if(gameState!=null && gameState.state>=0)
   {
 
-    viewerContext.fillStyle = gameColours.background;     //Clears area
-    viewerContext.fillRect(startX,startY, gridSize*blockSize, gridSize*blockSize);
-    viewerContext.fillRect(startX,startY + gridSize*blockSize + 20, gridSize*blockSize, 10);
+    viewerContext.fillStyle = gameColours.progressBarGreen;         //Draws progress bar at bottom - current position
+    viewerContext.fillRect(startX, startY + gridSize*blockSize + 20, (currentGamestate/(gridSize*gridSize))*(gridSize*blockSize), blockSize);
 
-    viewerContext.fillStyle = gameColours.progressBar;         //Draws progress bar at bottom
+    viewerContext.fillStyle = gameColours.progressBarBlue;         //Draws progress bar at bottom - real gametime
+    viewerContext.fillRect(startX + (realtimeGamestate/(gridSize*gridSize))*(gridSize*blockSize) -2 , startY + gridSize*blockSize + 20, 4, blockSize);
 
-    viewerContext.fillRect(startX, startY + gridSize*blockSize + 20, (gameState.state/(gridSize*gridSize))*(gridSize*blockSize), blockSize);
+    viewerContext.fillStyle = gameColours.progressBarRed;         //Draws progress bar at bottom - started viewing gametime
+    viewerContext.fillRect(startX + (startedViewingGamestate/(gridSize*gridSize))*(gridSize*blockSize) -2, startY + gridSize*blockSize + 20, 4, blockSize);
 
+    progBar =
+    {
+      x:startX,
+      y:startY + gridSize*blockSize + 20,
+      width:(realtimeGamestate/(gridSize*gridSize))*(gridSize*blockSize),
+      height:blockSize
+    }
 
     viewerContext.strokeStyle = gameColours.border;          //Draws square around viewer and progress bar
     viewerContext.strokeRect(startX,startY, gridSize*blockSize, gridSize*blockSize);
@@ -113,8 +167,6 @@ function drawGameboard() {
 
     var snakeRects = parseCoords(gameState.snake0,snakeStartIndex);
     for (i = 0; i < snakeRects.length; i++) {
-      console.log("Drawing from "+snakeRects[i]['startX'] + " with width "+snakeRects[i]['width']*blockSize);
-      console.log("Drawing from "+snakeRects[i]['startY'] + " with height "+snakeRects[i]['height']*blockSize);
       viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
@@ -141,24 +193,85 @@ function drawGameboard() {
     for (i = 0; i < snakeRects.length; i++) {
       viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
+  }
+  else if (lastGameRef>=0){
+    var col1X = 100;
+    var col2X = 350;
+    var colStartY = 50;
+    viewerContext.fillStyle = gameColours.border;
+    viewerContext.font = "30px Arial";
+    viewerContext.fillText("Game "+lastGameRef+":", (col1X+col2X)/2-50, colStartY);
+    viewerContext.fillText("Player:", col1X, colStartY+100);
+    viewerContext.fillText("Score:", col2X, colStartY+100);
+    viewerContext.fillText("Snake 1", col1X, colStartY+200);
+    viewerContext.fillText(lastGameSnake0Score, col2X, colStartY+200);
+
+    viewerContext.fillText("Snake 2", col1X, colStartY+250);
+    viewerContext.fillText(lastGameSnake1Score, col2X, colStartY+250);
+
+    viewerContext.fillText("Snake 3", col1X, colStartY+300);
+    viewerContext.fillText(lastGameSnake2Score, col2X, colStartY+300);
+
+    viewerContext.fillText("Snake 4", col1X, colStartY+350);
+    viewerContext.fillText(lastGameSnake3Score, col2X, colStartY+350);
 
   }
 
   requestAnimationFrame(drawGameboard);
+}
+
+function clickEventListener(event) {
+  /*
+  console.log("clicked "+event.pageX);
+  console.log("clicked "+event.pageY);
+  */
+  var x = event.pageX - viewerX;
+  var y = event.pageY - viewerY;
+
+  if (y > progBar.y && y < progBar.y + progBar.height
+             && x > progBar.x && x < progBar.x + progBar.width) {
+             realtime = false;
+             var clickedGameState = (x- startX)*gridSize/blockSize;
+             if(clickedGameState >= startedViewingGamestate)
+             {
+               currentGamestate = clickedGameState;
+             }
+             console.log('clicked progress  bar' +clickedGameState);
+         }
 
 }
 
+async function cacheGame(gameRef, game){
+  window.sessionStorage.clear();                               //This piece of code fetches data from api_url,
+  window.sessionStorage.setItem("cachedGame",JSON.stringify(game));              //Crashes after storing too many games, so set to only store last 1
+  //cachedGames.push(gameRef);
+  console.log("Caching game: "+gameRef);
 
+    // @ts-ignore: Object is possibly 'null'.
+    let tempGameStateArr = {};
+    tempGameStateArr = JSON.parse(sessionStorage.getItem("cachedGame")!);
+    console.log("Cached "+Object.keys(tempGameStateArr).length+" gamestates");
+
+}
 
 function App() {
   const viewerRef = React.useRef<HTMLCanvasElement>(null);
   const [context, setContext] = React.useState<CanvasRenderingContext2D | null>(null);
   const [response, setResponse] = useState("Connecting...");
+  const [cachedGamesList, setCachedGamesList] = useState("");
+  const [gameRef, setGameRef] = useState(-1);
   //const [drawCells, setDrawCells] = useState(drawCellsVar);
 
     useEffect(() => {
 
       if (viewerRef.current) {
+        if(!addedClickEvent)
+        {
+          viewerRef.current.addEventListener('click', clickEventListener, false);
+          viewerX = viewerRef.current.offsetLeft + viewerRef.current.clientLeft;
+          viewerY = viewerRef.current.offsetTop + viewerRef.current.clientTop;
+          addedClickEvent = true;
+        }
         const renderCtx = viewerRef.current.getContext('2d');
 
         if (renderCtx) {
@@ -178,12 +291,98 @@ function App() {
 
           const socket = socketIOClient(ENDPOINT, { transports : ['websocket'] });
           socket.on("gamestate", data => {
-            gameState = data;
-            setResponse("Gamestate "+gameState.state);
+            gameStateArr[data.state] = data;
+            realtimeGamestate = data.state;
+            if(realtime)
+            {
+              currentGamestate = realtimeGamestate;
+            }
+            else if(!paused)
+            {
+              currentGamestate++;
+            }
+
+            if(waitingForFirstGamestate)
+            {
+              startedViewingGamestate = realtimeGamestate;
+              waitingForFirstGamestate = false;
+            }
+
+            gameState = gameStateArr[currentGamestate];
+            setResponse("Realtime: "+data.state + " Viewing: "+currentGamestate);
 
           });
 
-              return () => {socket.disconnect();};
+          socket.on("endGame", gameRef => {
+
+            cacheGame(gameRef, gameStateArr);
+            lastGameRef = gameRef;
+            lastGameSnake0Score = gameState.snake0Score;
+            lastGameSnake1Score = gameState.snake1Score;
+            lastGameSnake2Score = gameState.snake2Score;
+            lastGameSnake3Score = gameState.snake3Score;
+            gameState =
+            {
+              ref: -1,
+              state: -1,
+              apple: "",
+              obstacle0: "",
+              obstacle1: "",
+              obstacle2: "",
+              snake0: "",
+              snake1: "",
+              snake2: "",
+              snake3: "",
+              snake0Score: -1,
+              snake1Score: -1,
+              snake2Score: -1,
+              snake3Score: -1
+            };
+            waitingForFirstGamestate = true;
+            gameStateArr = {};
+            realtimeGamestate = 0;
+            currentGamestate = 0;
+            setResponse("Waiting for next game");
+            /*
+            var gameStateListString = "Cached games: "+cachedGames[0];
+
+            var p;
+            for(p = 1; p < cachedGames.length; p++)
+            {
+              gameStateListString = gameStateListString+", "+cachedGames[p];
+            }
+            */
+
+            setCachedGamesList("Cached games: "+lastGameRef);
+          });
+
+          socket.on("startGame", gameRef => {
+            gameState =
+            {
+              ref: -1,
+              state: -1,
+              apple: "",
+              obstacle0: "",
+              obstacle1: "",
+              obstacle2: "",
+              snake0: "",
+              snake1: "",
+              snake2: "",
+              snake3: "",
+              snake0Score: -1,
+              snake1Score: -1,
+              snake2Score: -1,
+              snake3Score: -1
+            };
+            waitingForFirstGamestate = true;
+            gameStateArr = {};
+            realtimeGamestate = 0;
+            currentGamestate = 0;
+            setGameRef(gameRef)
+            setResponse("Loading...");
+          });
+
+          return () => {socket.disconnect();};
 
           }, []);
 
@@ -195,11 +394,14 @@ function App() {
         textAlign: 'center',
       }}>
       <h1>Snake Game</h1>
+      <p>
+      {"Game number: "+gameRef}
+      </p>
       <canvas
         id="viewer"
         ref={viewerRef}
-        width={520}
-        height={550}
+        width={canvasWidth}
+        height={canvasHeight}
         style={{
           border: '2px solid #000',
           marginTop: 10,
@@ -207,6 +409,9 @@ function App() {
       ></canvas>
       <p>
       {response}
+      </p>
+      <p>
+      {cachedGamesList}
       </p>
     </div>
 

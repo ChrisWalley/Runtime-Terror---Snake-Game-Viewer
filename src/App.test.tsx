@@ -29,3 +29,6 @@ test('Tests parsing coordinates - Snake', () => {
 test('Tests parsing coordinates - Empty', () => {
   expect(parseCoords("", 1).length).toBe(0);
 });
+
+//Add test for client socket gamestate update
+// Add test for loop method
