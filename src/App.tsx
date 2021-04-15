@@ -343,15 +343,7 @@ function App() {
             realtimeGamestate = 0;
             currentGamestate = 0;
             setResponse("Waiting for next game");
-            /*
-            var gameStateListString = "Cached games: "+cachedGames[0];
 
-            var p;
-            for(p = 1; p < cachedGames.length; p++)
-            {
-              gameStateListString = gameStateListString+", "+cachedGames[p];
-            }
-            */
 
             setCachedGamesList("Cached games: "+lastGameRef);
           });
@@ -385,7 +377,14 @@ function App() {
           return () => {socket.disconnect();};
 
           }, []);
-
+// populating dropdown list
+          const [items] = React.useState([
+    { label: "Division 1", value: "Division 1" },
+    { label: "Division 2", value: "Division 2" },
+    { label: "Division 3", value: "Division 3" },
+    { label: "Division 4", value: "Division 4" }
+  ]);
+//end of dropdown list
 
   return (
 
@@ -394,9 +393,20 @@ function App() {
         textAlign: 'center',
       }}>
       <h1>Snake Game</h1>
-      <p>
-      {"Game number: "+gameRef}
-      </p>
+
+      <h3> Select Division</h3>
+      <select>
+      {items.map(item => (
+        <option
+          key={item.value}
+          value={item.value}
+        >
+          {item.label}
+        </option>
+      ))}
+    </select>
+
+
       <canvas
         id="viewer"
         ref={viewerRef}
@@ -407,6 +417,9 @@ function App() {
           marginTop: 10,
         }}
       ></canvas>
+      <p>
+      {"Game number: "+gameRef}
+      </p>
       <p>
       {response}
       </p>
@@ -419,41 +432,3 @@ function App() {
 }
 
 export default App;
-
-/*
-<p>
-  <button onClick={() => setDrawCells(false)}>
-    Toggle Cells
-  </button>
-</p>
-<p>
-<time dateTime={testVar}>{"TestVar: "+testVar}</time>
-</p>
-<p>
-<time dateTime={response}>{response}</time>
-</p>
-<p>
-<time dateTime={applePos}>{"Apple: "+applePos}</time>
-</p>
-<p>
-<time dateTime={snake0}>{"Snake 1: "+snake0}</time>
-</p>
-<p>
-<time dateTime={snake1}>{"Snake 2: "+snake1}</time>
-</p>
-<p>
-<time dateTime={snake2}>{"Snake 3: "+snake2}</time>
-</p>
-<p>
-<time dateTime={snake3}>{"Snake 4: "+snake3}</time>
-</p>
-<p>
-<time dateTime={obs0}>{"Obstacle 1: "+obs0}</time>
-</p>
-<p>
-<time dateTime={obs1}>{"Obstacle 2: "+obs1}</time>
-</p>
-<p>
-<time dateTime={obs2}>{"Obstacle 3: "+obs2}</time>
-</p>
-*/
