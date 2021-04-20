@@ -36,13 +36,54 @@ var startedViewingGamestate = 0;
 var waitingForFirstGamestate = true;
 
 let divisions = [] as any[];
-var currDivision = -1;
 var nGames = 0;
-var updateGameStateIntervalRef;
+/*
+([
+{ label: "Division 1", value: "Division 1" },
+{ label: "Division 2", value: "Division 2" },
+{ label: "Division 3", value: "Division 3" },
+{ label: "Division 4", value: "Division 4" }
+]);
+*/
 
-var config;
+var config =
+{
+  game_time : 300,
+  game_mode : 'GROW',
+  game_speed : 50,
+  apple_growth : 5,
+  starting_length : 5,
+  num_snakes : 4,
+  num_apples : 1,
+  special_apple : true,
+  apple_limit : 200,
+  decay_rate : 0.1,
+  game_width  : 50,
+  game_height : 50,
+  between_rounds  : 10000,
+  num_obstacles : 3,
+  num_zombies  : -1,
+  zombie_speed  : -1,
+  invisibility_period  : -1,
+};
 
-var gameState;
+var gameState =
+{
+  ref: -1,
+  state: -1,
+  apple: "",
+  obstacle0: "",
+  obstacle1: "",
+  obstacle2: "",
+  snake0: "",
+  snake1: "",
+  snake2: "",
+  snake3: "",
+  snake0Score: -1,
+  snake1Score: -1,
+  snake2Score: -1,
+  snake3Score: -1
+};
 
 var gameColours =
 {
@@ -58,13 +99,6 @@ var gameColours =
   snake1: 'rgb(108,50,108)',
   snake2: 'rgb(20,0,100)',
   snake3: 'rgb(0,205,108)'
-}
-
-var appleCol =
-{
-  r:0,
-  g:0,
-  b:0
 }
 
 var progBar = {
@@ -251,32 +285,31 @@ function getConfig() {
         {
           console.log(data);
         });
-
-  //Save game settings
-
-  config =
-  {
-    game_time : 300,
-    game_mode : 'GROW',
-    game_speed : 50,
-    apple_growth : 5,
-    starting_length : 5,
-    num_snakes : 4,
-    num_apples : 1,
-    special_apple : true,
-    apple_limit : 200,
-    decay_rate : 0.1,
-    game_width  : 50,
-    game_height : 50,
-    between_rounds  : 10000,
-    num_obstacles : 3,
-    num_zombies  : -1,
-    zombie_speed  : -1,
-    invisibility_period  : -1,
-    gameFrames : 300*(1000/50)  //game_time * (1000 ms / game speed)
-  };
-
 }
+
+function getDivisions() {
+/*
+This function will be used to fill in the divisions for the game.
+At the moment it is commented out because the server isn't up yet.
+Number of divisions is hardcoded to 10.
+  fetch(ENDPOINT+COUNT_PATH)
+        .then(response => response.json())
+        .then(data =>
+        {
+          console.log(data);
+        });
+*/
+
+// populating dropdown list
+divisions = [];
+ var i;
+ nGames = 10;
+ for(i = 1;i <= nGames;i++)
+ {
+   divisions.push({ label: "Division "+i, value: "Division "+i});
+ }
+}
+//end of dropdown list
 
 
 function resetGamestate()
@@ -330,77 +363,6 @@ function saveGameData(gameReference, saveGameState)
 
 function updateGameState()
 {
-  gameState =
-  {
-    ref: 0,
-    state: 0,
-    apple: "0 0",
-    obstacle0: "",
-    obstacle1: "",
-    obstacle2: "",
-    snake0: "",
-    snake1: "",
-    snake2: "",
-    snake3: "",
-    snake0Score: 0,
-    snake1Score: 0,
-    snake2Score: 0,
-    snake3Score: 0
-  };
-  appleCol.r++;
-  if(appleCol.r > 255)
-  {
-    appleCol.r=0;
-    appleCol.g++;
-    if(appleCol.g > 255)
-    {
-      appleCol.g=0;
-      appleCol.b++;
-      if(appleCol.b > 255)
-      {
-        appleCol.b=0;
-      }
-    }
-  }
-  gameColours.apple = 'rgb('+appleCol.r+','+appleCol.g+','+appleCol.b+')';
-}
-
-function refreshLeaderboardAndDivisions()
-{
-  getDivisions();
-  getPlayers();
-}
-
-
-function getDivisions() {
-/*
-This function will be used to fill in the divisions for the game.
-At the moment it is commented out because the server isn't up yet.
-Number of divisions is hardcoded to 10.
-  fetch(ENDPOINT+COUNT_PATH)
-        .then(response => response.json())
-        .then(data =>
-        {
-          console.log(data);
-        });
-*/
-
-// populating division dropdown list
-divisions = [];
- var i;
- nGames = 10;
- for(i = 1;i <= nGames;i++)
- {
-   divisions.push({ label: "Division "+i, value: "Division "+i});
- }
- if(nGames > 0)
- {
-   currDivision = 0;
- }
-}
-
-
-function getPlayers() {
 
 }
 
@@ -416,7 +378,14 @@ function App() {
     useEffect(() => {
 
       if (viewerRef.current) {
-
+        //First add click events to viewer
+        if(!addedClickEvent)
+        {
+          viewerRef.current.addEventListener('click', clickEventListener, false);
+          viewerX = viewerRef.current.offsetLeft + viewerRef.current.clientLeft;
+          viewerY = viewerRef.current.offsetTop + viewerRef.current.clientTop;
+          addedClickEvent = true;
+        }
         const renderCtx = viewerRef.current.getContext('2d');
 
         if (renderCtx) {
@@ -443,15 +412,65 @@ function App() {
           //Set default current division to 0 (top of list)
           //Start loop to request current division information from server every x ms
           //On end of game string, start end of game timer, and display results from last game.
-          //refresh leaderboard data and division data
+          //refresh sleaderboard data and division data
           //On start of new game, refresh leaderboard data and division data
 
-          getConfig();
-          refreshLeaderboardAndDivisions();
+          const socket = socketIOClient(ENDPOINT, { transports : ['websocket'] });
+          socket.on("gamestate", data => {
+            gameStateArr[data.state] = data;
+            realtimeGamestate = data.state;
 
-          updateGameStateIntervalRef = setInterval(updateGameState, config.game_speed);
+            if(!gamePaused)
+            {
+              if(realtime)
+              {
+                currentGamestate = realtimeGamestate;
+              }
+              else
+              {
+                currentGamestate++;
+              }
+            }
+            else
+            {
+              realtime = false;
+            }
 
 
+
+            if(waitingForFirstGamestate)
+            {
+              startedViewingGamestate = realtimeGamestate;
+              waitingForFirstGamestate = false;
+            }
+
+            gameState = gameStateArr[currentGamestate];
+            setResponse("Realtime: "+data.state + " Viewing: "+currentGamestate);
+
+          });
+
+          socket.on("endGame", gameRef => {
+
+            cacheGame(gameRef, gameStateArr);
+            saveGameData(gameRef, gameState);
+            resetGamestate();
+
+            setResponse("Waiting for next game");
+
+
+            setCachedGamesList("Cached games: "+lastGameRef);
+          });
+
+          socket.on("startGame", gameRef => {
+            getConfig();
+            getDivisions();
+            resetGamestate();
+
+            setGameRef(gameRef)
+            setResponse("Loading...");
+          });
+
+          return () => {socket.disconnect();};
 
           }, []);
 
