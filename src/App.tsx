@@ -3,7 +3,7 @@ import socketIOClient from "socket.io-client";
 
 //import ClientComponent from "./ClientComponent.js";
 
-const ENDPOINT = "http://walleyco.de:3001";
+const ENDPOINT = "http://localhost:3001";
 const parseCoords = require('./parseCoords');
 
 const canvasHeight = 550;
@@ -377,14 +377,6 @@ function App() {
           return () => {socket.disconnect();};
 
           }, []);
-// populating dropdown list
-          const [items] = React.useState([
-    { label: "Division 1", value: "Division 1" },
-    { label: "Division 2", value: "Division 2" },
-    { label: "Division 3", value: "Division 3" },
-    { label: "Division 4", value: "Division 4" }
-  ]);
-//end of dropdown list
 
   return (
 
@@ -394,17 +386,7 @@ function App() {
       }}>
       <h1>Snake Game</h1>
 
-      <h3> Select Division</h3>
-      <select>
-      {items.map(item => (
-        <option
-          key={item.value}
-          value={item.value}
-        >
-          {item.label}
-        </option>
-      ))}
-    </select>
+
 
 
       <canvas
