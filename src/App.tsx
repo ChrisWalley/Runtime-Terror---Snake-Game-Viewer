@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import socketIOClient from "socket.io-client";
 
-
 const ENDPOINT = "http://walleyco.de:3001";
 const CONFIG_PATH = 'games/config';
 const COUNT_PATH = 'games/count';
+const fetch = require("node-fetch");
 
 const parseCoords = require('./parseCoords');
 
@@ -245,12 +245,15 @@ function clickEventListener(event) {
 
 function getConfig() {
   //fetch(ENDPOINT+'/games/config')
+  /*
+  disabled until I can get tests to work
   fetch('https://httpbin.org/ip')//IP to test for now.
         .then(response => response.json())
         .then(data =>
         {
           console.log(data);
         });
+        */
 
   //Save game settings
 
