@@ -3,7 +3,7 @@ import socketIOClient from "socket.io-client";
 
 //import ClientComponent from "./ClientComponent.js";
 
-const ENDPOINT = "http://walleyco.de:3001";
+const ENDPOINT = "http://localhost:3001";
 const parseCoords = require('./parseCoords');
 
 const canvasHeight = 550;
