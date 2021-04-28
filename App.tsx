@@ -4,162 +4,312 @@ import socketIOClient from "socket.io-client";
 //import ClientComponent from "./ClientComponent.js";
 
 const ENDPOINT = "http://walleyco.de:3001";
-const api_url = 'https://api.wheretheiss.at/v1/satellites/25544'; 
+const parseCoords = require('./parseCoords');
+
+const canvasHeight = 550;
+const canvasWidth = 520;
 
 const blockSize = 10;
 const gridSize = 50;
 const startX = 10;
 const startY = 10;
 
-var currPos = -1;
+var currentGamestate = -1
+var realtimeGamestate = -1
 
-var applePos = "0 0";
+var lastGameRef = -1;
+var lastGameSnake0Score = -1;
+var lastGameSnake1Score = -1;
+var lastGameSnake2Score = -1;
+var lastGameSnake3Score = -1;
 
-var snake0 = "";
-var snake1 = "";
-var snake2 = "";
-var snake3 = "";
+var realtime = true;
+var paused = false;
+var addedClickEvent = false;
 
-var obs0 = "";
-var obs1 = "";
-var obs2 = "";
+let gameStateArr = {};
+//let cachedGames = [] as any;
 
-var viewerContext;
 
-function loop() {
-  if(currPos>=0)
+var startedViewingGamestate = 0;
+var waitingForFirstGamestate = true;
+
+var gameState =
+{
+  ref: -1,
+  state: -1,
+  apple: "",
+  obstacle0: "",
+  obstacle1: "",
+  obstacle2: "",
+  snake0: "",
+  snake1: "",
+  snake2: "",
+  snake3: "",
+  snake0Score: -1,
+  snake1Score: -1,
+  snake2Score: -1,
+  snake3Score: -1
+};
+
+var gameColours =
+{
+  background: 'rgb(255, 255, 255)',
+  progressBarGreen: 'rgb(0, 255, 0)',
+  progressBarBlue: 'rgb(0, 0, 255)',
+  progressBarRed: 'rgb(255, 0, 0)',
+  border: 'rgb(0, 0, 0)',
+  cellLines: 'rgb(185, 185, 185)',
+  apple: 'rgb(218,165,32)',
+  obstacles:'rgb(108,108,108)',
+  snake0:'rgb(208,0,108)',
+  snake1: 'rgb(108,50,108)',
+  snake2: 'rgb(20,0,100)',
+  snake3: 'rgb(0,205,108)'
+}
+
+var progBar = {
+  x:0,
+  y:0,
+  width:0,
+  height:0
+}
+
+var viewerX = 0;
+var viewerY = 0;
+
+
+var viewerContext: { fillStyle: string; fillRect: (arg0: number, arg1: number, arg2: number, arg3: number) => void; strokeStyle: string; strokeRect: (arg0: number, arg1: number, arg2: number, arg3: number) => void; font: string; fillText: (arg0: string | number, arg1: number, arg2: number) => void; };
+
+function drawGameboard() {
+
+  viewerContext.fillStyle = gameColours.background;     //Clears area
+  viewerContext.fillRect(0,0, canvasWidth, canvasHeight);
+  //viewerContext.fillRect(startX,startY, gridSize*blockSize, gridSize*blockSize);
+  viewerContext.fillRect(startX,startY + gridSize*blockSize + 20, gridSize*blockSize, 10);
+
+  if(gameState!=null && gameState.state>=0)
   {
-    var loopX;
-    var loopY;
 
-    var currX = ~~(currPos%gridSize);
-    var currY = ~~(currPos/gridSize);
+    viewerContext.fillStyle = gameColours.progressBarGreen;         //Draws progress bar at bottom - current position
+    viewerContext.fillRect(startX, startY + gridSize*blockSize + 20, (currentGamestate/(gridSize*gridSize))*(gridSize*blockSize), blockSize);
 
+    viewerContext.fillStyle = gameColours.progressBarBlue;         //Draws progress bar at bottom - real gametime
+    viewerContext.fillRect(startX + (realtimeGamestate/(gridSize*gridSize))*(gridSize*blockSize) -2 , startY + gridSize*blockSize + 20, 4, blockSize);
 
-    viewerContext.fillStyle = 'rgb(255, 255, 255)';     //Clears area to white
-    viewerContext.fillRect(startX,startY, gridSize*blockSize, gridSize*blockSize);
-    viewerContext.fillRect(startX,startY + gridSize*blockSize + 20, gridSize*blockSize, 10);
+    viewerContext.fillStyle = gameColours.progressBarRed;         //Draws progress bar at bottom - started viewing gametime
+    viewerContext.fillRect(startX + (startedViewingGamestate/(gridSize*gridSize))*(gridSize*blockSize) -2, startY + gridSize*blockSize + 20, 4, blockSize);
 
-    viewerContext.fillStyle = 'rgb(0, 255, 0)';         //Draws progress bar at bottom
+    progBar =
+    {
+      x:startX,
+      y:startY + gridSize*blockSize + 20,
+      width:(realtimeGamestate/(gridSize*gridSize))*(gridSize*blockSize),
+      height:blockSize
+    }
 
-    viewerContext.fillRect(startX, startY + gridSize*blockSize + 20, (currPos/(gridSize*gridSize))*(gridSize*blockSize), blockSize);
-
-
-    viewerContext.strokeStyle = 'rgb(0, 0, 0)';         //Draws square around viewer and progress bar
+    viewerContext.strokeStyle = gameColours.border;          //Draws square around viewer and progress bar
     viewerContext.strokeRect(startX,startY, gridSize*blockSize, gridSize*blockSize);
     viewerContext.strokeRect(startX,startY + gridSize*blockSize + 20, gridSize*blockSize, 10);
 
 
-
-
-    viewerContext.strokeStyle = 'rgb(185, 185, 185)';
-
-    for(loopX = 0; loopX < gridSize; loopX++)     //Draws squares around cells
-    {
-      for(loopY = 0; loopY < gridSize; loopY++)
+      viewerContext.strokeStyle = gameColours.cellLines;
+      var loopX: number;
+      var loopY: number;
+      for(loopX = 0; loopX < gridSize; loopX++)     //Draws squares around cells
       {
-        viewerContext.strokeRect(startX + loopX*blockSize, startY + loopY*blockSize, blockSize, blockSize);
+        for(loopY = 0; loopY < gridSize; loopY++)
+        {
+          viewerContext.strokeRect(startX + loopX*blockSize, startY + loopY*blockSize, blockSize, blockSize);
+        }
       }
-    }
-
 
     //Apple
-    var appleCoords = applePos.split(' ');
+    var appleCoords = gameState.apple.split(' ');
     if(appleCoords.length > 1)
     {
       var appleX = parseInt(appleCoords[0]);
       var appleY = parseInt(appleCoords[1]);
-      viewerContext.fillStyle = 'rgb(218,165,32)';
+      viewerContext.fillStyle = gameColours.apple;
       viewerContext.fillRect(startX + appleX*blockSize, startY +  appleY*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
     }
 
 
     //Obstacles
-    viewerContext.fillStyle = 'rgb(108,108,108)';
-    var obsArr;
-    var i;
+    viewerContext.fillStyle = gameColours.obstacles;
+    var obsStartIndex = 1;
+    var i: number;
+
+    //Obstacle 0
+    var obsRects = parseCoords(gameState.obstacle0,obsStartIndex);
+    for (i = 0; i < obsRects.length; i++) {
+      viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+    }
 
     //Obstacle 1
-    obsArr = obs0.split(' ');
-    for (i = 1; i < obsArr.length; i++) {
-      var pos = obsArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+    obsRects = parseCoords(gameState.obstacle1,obsStartIndex);
+    for (i = 0; i < obsRects.length; i++) {
+      viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
     //Obstacle 2
-    obsArr = obs1.split(' ');
-    for (i = 1; i < obsArr.length; i++) {
-      var pos = obsArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+
+    obsRects = parseCoords(gameState.obstacle2,obsStartIndex);
+    for (i = 0; i < obsRects.length; i++) {
+      viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
-    //Obstacle 3
-    obsArr = obs2.split(' ');
-    for (i = 1; i < obsArr.length; i++) {
-      var pos = obsArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
-    }
 
     //Snakes
-    var snakeArr;
-    var i;
+    //Snake 0
+    var snakeStartIndex = 4;
+    viewerContext.fillStyle = gameColours.snake0;
+
+    var snakeRects = parseCoords(gameState.snake0,snakeStartIndex);
+    for (i = 0; i < snakeRects.length; i++) {
+      viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+    }
 
     //Snake 1
-    viewerContext.fillStyle = 'rgb(208,0,108)';
+    viewerContext.fillStyle = gameColours.snake1;
 
-    snakeArr = snake0.split(' ');
-    for (i = 4; i < snakeArr.length; i++) {
-      var pos = snakeArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+    snakeRects = parseCoords(gameState.snake1,snakeStartIndex);
+    for (i = 0; i < snakeRects.length; i++) {
+      viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
     //Snake 2
-    viewerContext.fillStyle = 'rgb(108,50,108)';
+    viewerContext.fillStyle = gameColours.snake2;
 
-    snakeArr = snake1.split(' ');
-    for (i = 4; i < snakeArr.length; i++) {
-      var pos = snakeArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+    snakeRects = parseCoords(gameState.snake2,snakeStartIndex);
+    for (i = 0; i < snakeRects.length; i++) {
+      viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
 
     //Snake 3
-    viewerContext.fillStyle = 'rgb(20,0,100)';
+    viewerContext.fillStyle = gameColours.snake3;
 
-    snakeArr = snake2.split(' ');
-    for (i = 4; i < snakeArr.length; i++) {
-      var pos = snakeArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+    snakeRects = parseCoords(gameState.snake3,snakeStartIndex);
+    for (i = 0; i < snakeRects.length; i++) {
+      viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
     }
+  }
+  else if (lastGameRef>=0){
+    var col1X = 100;
+    var col2X = 350;
+    var colStartY = 50;
+    viewerContext.fillStyle = gameColours.border;
+    viewerContext.font = "30px Arial";
+    viewerContext.fillText("Game "+lastGameRef+":", (col1X+col2X)/2-50, colStartY);
+    viewerContext.fillText("Player:", col1X, colStartY+100);
+    viewerContext.fillText("Score:", col2X, colStartY+100);
+    viewerContext.fillText("Snake 1", col1X, colStartY+200);
+    viewerContext.fillText(lastGameSnake0Score, col2X, colStartY+200);
 
-    //Snake 4
-    viewerContext.fillStyle = 'rgb(99,205,108)';
+    viewerContext.fillText("Snake 2", col1X, colStartY+250);
+    viewerContext.fillText(lastGameSnake1Score, col2X, colStartY+250);
 
-    snakeArr = snake3.split(' ');
-    for (i = 4; i < snakeArr.length; i++) {
-      var pos = snakeArr[i];
-      var posArr = pos.split(',');
-      viewerContext.fillRect(startX + posArr[0]*blockSize, startY + posArr[1]*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
-    }
+    viewerContext.fillText("Snake 3", col1X, colStartY+300);
+    viewerContext.fillText(lastGameSnake2Score, col2X, colStartY+300);
+
+    viewerContext.fillText("Snake 4", col1X, colStartY+350);
+    viewerContext.fillText(lastGameSnake3Score, col2X, colStartY+350);
 
   }
 
-  requestAnimationFrame(loop);
+  requestAnimationFrame(drawGameboard);
 }
+
+function clickEventListener(event: { pageX: number; pageY: number; }) {
+  /*
+  console.log("clicked "+event.pageX);
+  console.log("clicked "+event.pageY);
+  */
+  var x = event.pageX - viewerX;
+  var y = event.pageY - viewerY;
+
+  if (y > progBar.y && y < progBar.y + progBar.height
+             && x > progBar.x && x < progBar.x + progBar.width) {
+             realtime = false;
+             var clickedGameState = (x- startX)*gridSize/blockSize;
+             if(clickedGameState >= startedViewingGamestate)
+             {
+               currentGamestate = clickedGameState;
+             }
+             console.log('clicked progress  bar' +clickedGameState);
+         }
+
+}
+
+async function cacheGame(gameRef: string, game: {}){
+  window.sessionStorage.clear();                               //This piece of code fetches data from api_url,
+  window.sessionStorage.setItem("cachedGame",JSON.stringify(game));              //Crashes after storing too many games, so set to only store last 1
+  //cachedGames.push(gameRef);
+  console.log("Caching game: "+gameRef);
+
+    // @ts-ignore: Object is possibly 'null'.
+    let tempGameStateArr = {};
+    tempGameStateArr = JSON.parse(sessionStorage.getItem("cachedGame")!);
+    console.log("Cached "+Object.keys(tempGameStateArr).length+" gamestates");
+
+}
+
+//play and pause functioning of the game
+
+function play(){
+  
+  (document).keydown(function (e: { which: any; }){
+
+  var key = e.which;
+  if (key == "32") pause();
+  else if (key == "80") play();
+  else if (key == "82")
+   {
+     init();
+     play();
+    }
+  }
+
+//Game can be paused by pressing key “Spacebar”.Game can be resumed again by pressing key “P”.Game can be refreshed by pressing key “R”.
+
+//The function below is for Play or Resuming Play after pausing the game and to move the snake using a timer which will trigger the paust function  every 60ms:
+    
+if (typeof Game_Interval != "undefined"){
+      clearInterval(Game_Interval);
+
+    }
+  
+    
+    Game_Interval = setInterval(print, 60);const allowPressKeys = true;
+  
+
+    function pause(){
+      
+    clearInterval(Game_Interval);
+    const allowPressKeys = false;
+  }
+  
+
+
 
 function App() {
   const viewerRef = React.useRef<HTMLCanvasElement>(null);
   const [context, setContext] = React.useState<CanvasRenderingContext2D | null>(null);
   const [response, setResponse] = useState("Connecting...");
+  const [cachedGamesList, setCachedGamesList] = useState("");
+  const [gameRef, setGameRef] = useState(-1);
+  //const [drawCells, setDrawCells] = useState(drawCellsVar);
 
     useEffect(() => {
 
       if (viewerRef.current) {
+        if(!addedClickEvent)
+        {
+          viewerRef.current.addEventListener('click', clickEventListener, false);
+          viewerX = viewerRef.current.offsetLeft + viewerRef.current.clientLeft;
+          viewerY = viewerRef.current.offsetTop + viewerRef.current.clientTop;
+          addedClickEvent = true;
+        }
         const renderCtx = viewerRef.current.getContext('2d');
 
         if (renderCtx) {
@@ -170,57 +320,109 @@ function App() {
       if (context)
       {
         viewerContext = context;
-        loop();
+        drawGameboard();
       }
-    
-
-      const socket = socketIOClient(ENDPOINT);
-      socket.on("gamestate", data => {
-        setResponse("Gamestate "+data);
-        currPos = data;
-      });
-
-      socket.on("apple", data => {
-        applePos = data;
-      });
-
-      socket.on("snake", data => {
-        var arr = data.split(' ');
-        switch(arr[0]) {
-          case "0":
-              snake0 = data;
-            break;
-          case "1":
-              snake1 = data;
-            break;
-          case "2":
-              snake2 = data;
-            break;
-          case "3":
-              snake3 = data;
-          break;
-              }
-          });
-
-      socket.on("obstacle", data => {
-        var arr = data.split(' ');
-        switch(arr[0]) {
-          case "0":
-              obs0 = data;
-            break;
-          case "1":
-              obs1 = data;
-            break;
-          case "2":
-              obs2 = data;
-            break;
-              }
-          });
-
-
+      //drawCellsVar = drawCells;
     }, [context]);
 
+        useEffect(() => {
 
+          const socket = socketIOClient(ENDPOINT, { transports : ['websocket'] });
+          socket.on("gamestate", (data: { state: string | number; }) => {
+            gameStateArr[data.state] = data;
+            realtimeGamestate = data.state;
+            if(realtime)
+            {
+              currentGamestate = realtimeGamestate;
+            }
+            else if(!paused)
+            {
+              currentGamestate++;
+            }
+
+            if(waitingForFirstGamestate)
+            {
+              startedViewingGamestate = realtimeGamestate;
+              waitingForFirstGamestate = false;
+            }
+
+            gameState = gameStateArr[currentGamestate];
+            setResponse("Realtime: "+data.state + " Viewing: "+currentGamestate);
+
+          });
+
+          socket.on("endGame", (gameRef: number) => {
+
+            cacheGame(gameRef, gameStateArr);
+            lastGameRef = gameRef;
+            lastGameSnake0Score = gameState.snake0Score;
+            lastGameSnake1Score = gameState.snake1Score;
+            lastGameSnake2Score = gameState.snake2Score;
+            lastGameSnake3Score = gameState.snake3Score;
+            gameState =
+            {
+              ref: -1,
+              state: -1,
+              apple: "",
+              obstacle0: "",
+              obstacle1: "",
+              obstacle2: "",
+              snake0: "",
+              snake1: "",
+              snake2: "",
+              snake3: "",
+              snake0Score: -1,
+              snake1Score: -1,
+              snake2Score: -1,
+              snake3Score: -1
+            };
+            waitingForFirstGamestate = true;
+            gameStateArr = {};
+            realtimeGamestate = 0;
+            currentGamestate = 0;
+            setResponse("Waiting for next game");
+
+
+            setCachedGamesList("Cached games: "+lastGameRef);
+          });
+
+          socket.on("startGame", (gameRef: any) => {
+            gameState =
+            {
+              ref: -1,
+              state: -1,
+              apple: "",
+              obstacle0: "",
+              obstacle1: "",
+              obstacle2: "",
+              snake0: "",
+              snake1: "",
+              snake2: "",
+              snake3: "",
+              snake0Score: -1,
+              snake1Score: -1,
+              snake2Score: -1,
+              snake3Score: -1
+            };
+            waitingForFirstGamestate = true;
+            gameStateArr = {};
+            realtimeGamestate = 0;
+            currentGamestate = 0;
+            setGameRef(gameRef)
+            setResponse("Loading...");
+          });
+
+          return () => {socket.disconnect();};
+
+          }, []);
+// populating dropdown list
+          const [items] = React.useState([
+    { label: "Division 1", value: "Division 1" },
+    { label: "Division 2", value: "Division 2" },
+    { label: "Division 3", value: "Division 3" },
+    { label: "Division 4", value: "Division 4" }
+  ]);
+//end of dropdown list
 
   return (
 
@@ -229,61 +431,52 @@ function App() {
         textAlign: 'center',
       }}>
       <h1>Snake Game</h1>
+
+      <h3> Select Division</h3>
+      <select>
+      {items.map((item: { value: any; label: any; }) => (
+        <option
+          key={item.value}
+          value={item.value}
+        >
+          {item.label}
+        </option>
+      ))}
+    </select>
+
+
       <canvas
         id="viewer"
         ref={viewerRef}
-        width={520}
-        height={550}
+        width={canvasWidth}
+        height={canvasHeight}
         style={{
           border: '2px solid #000',
           marginTop: 10,
         }}
       ></canvas>
       <p>
-      <time dateTime={response}>{response}</time>
+      {"Game number: "+gameRef}
       </p>
       <p>
-      <time dateTime={applePos}>{"Apple: "+applePos}</time>
+      {response}
       </p>
       <p>
-      <time dateTime={snake0}>{"Snake 1: "+snake0}</time>
-      </p>
-      <p>
-      <time dateTime={snake1}>{"Snake 2: "+snake1}</time>
-      </p>
-      <p>
-      <time dateTime={snake2}>{"Snake 3: "+snake2}</time>
-      </p>
-      <p>
-      <time dateTime={snake3}>{"Snake 4: "+snake3}</time>
-      </p>
-      <p>
-      <time dateTime={obs0}>{"Obstacle 1: "+obs0}</time>
-      </p>
-      <p>
-      <time dateTime={obs1}>{"Obstacle 2: "+obs1}</time>
-      </p>
-      <p>
-      <time dateTime={obs2}>{"Obstacle 3: "+obs2}</time>
+      {cachedGamesList}
       </p>
     </div>
-
-
-
 
   );
 }
 
-var gameStateCounter = 0;                                    //In order to keep track of game states
-async function getISS(){                                     //This piece of code fetches data from api_url,
-  var response = await fetch(api_url);                       // stores it and then logs it to console. Data is lost if page is refreshed
-  var data = await response.json();
-  window.sessionStorage.setItem(gameStateCounter.toString(10),data.latitude);
-  console.log(sessionStorage.getItem(gameStateCounter.toString(10)));
-  gameStateCounter++;
-}
-getISS();
-setInterval(getISS,1000);
-
-
 export default App;
+
+function Game_Interval(Game_Interval: any) {
+  throw new Error("Function not implemented.");
+}
+
+function init() {
+  throw new Error("Function not implemented.");
+}
+
+}
