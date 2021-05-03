@@ -617,8 +617,9 @@ function App() {
           </div>
         </div>
 
-        </div>
-        <div className="column right">
+        <div className="column right" style={{
+          float: 'right'
+        }}>
           <h2>Leaderboard</h2>
           <table className="leaderboard-table">
             <thead>
@@ -661,6 +662,7 @@ function App() {
               </tr>
             </tbody>
           </table>
+        </div>
         </div>
       </div>
 
