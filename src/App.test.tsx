@@ -12,10 +12,11 @@ test('test header', () => {
   act(() => {
     render(<App />);
   });
-  const linkElement = screen.getByText(/Snake Game/i);
+  const linkElement = screen.getByText(/Snake AI Competition/i);
 
   expect(linkElement).toBeInTheDocument();
 });
+
 
 test('Tests parsing coordinates - Object', () => {
   expect(parseCoords("0 1,1 1,2 2,2 2,3 3,3", 1)[0]['startX']).toBe(1);

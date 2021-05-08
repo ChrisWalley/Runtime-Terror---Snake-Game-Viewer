@@ -1,20 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <link rel="stylesheet" href="css/main.css" />
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link type="text/css" rel="stylesheet" href="css/snake.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Dots&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200&display=swap" rel="stylesheet">
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
@@ -32,42 +29,29 @@
     -->
     <title>Snake Viewer</title>
   </head>
+  <header>
+    <nav>
+        <div class="logo">
+            <h4>runtime</h4>
+            <h4>Terror</h4>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#">Watch</a></li>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Docs</a></li>
+            <li><a href="#">Downloads</a></li>
+            <li><a href="#">Help</a></li>
+            <li><a href="#">Register</a></li>
+            <li><a href="#">Login</a></li>
+        </ul>
+    </nav>
+</header>
   <body>
-    <div id="header" class="alt">
-            <a class="logo" href="/"><strong>Snake AI Competition</strong> 2020</a>
-            <nav id="nav">
-                <ul>
-                    <li><a href="/">Home</a></li>
-                    <li class="opener" style="-webkit-user-select: none; cursor: pointer; white-space: nowrap; opacity: 1;"><a href="docs" style="cursor: pointer;">Docs</a>
-                        <ul style="-webkit-user-select: none; display: none; position: absolute;" class="">
 
-                            <li style="white-space: nowrap;"><a href="docs#game" style="display: block; cursor: pointer;">Game Mechanics</a></li>
-                            <li style="white-space: nowrap;"><a href="docs#interact" style="display: block; cursor: pointer;">Input and Output</a></li>
-                            <li style="white-space: nowrap;"><a href="docs#scoring" style="display: block; cursor: pointer;">Scoring</a></li>
-                            <li style="white-space: nowrap;"><a href="docs#java" style="display: block; cursor: pointer;">Java</a></li>
-                            <li style="white-space: nowrap;"><a href="docs#cpp" style="display: block; cursor: pointer;">C++</a></li>
-                            <li style="white-space: nowrap;"><a href="docs#python" style="display: block; cursor: pointer;">Python</a></li>
-                            <li style="white-space: nowrap;"><a href="docs#config" style="display: block; cursor: pointer;">Configuration</a></li>
-                        </ul>
-                    <li><a href="download">Downloads</a></li>
-                    <li><a href="submit">Submit</a></li>
-                    <li class="active"><a href="watch">Watch</a></li>
-                    <li><a href="help">Help</a></li>
-                </ul>
-            </nav>
-        </div>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
+    <div id="viewer"></div>
     <!-- Footer -->
-        <div id="footer">
-            <p class="copyright">Kludged together with duct tape and prayers
-                <br/>
-                © Runtime Terror
-                <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="Congrats! You found it..." id="hints">
-                    <i class="fa fa-television"></i>
-                </a>
-                <br/>University of the Witwatersrand, South Africa</p>
-        </div>
+
 
     <!--
       This HTML file is a template.
