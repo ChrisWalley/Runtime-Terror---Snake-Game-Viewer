@@ -550,6 +550,22 @@ function App() {
           }, [paused,rewind,ffwd,drawCells,realtime]);
 
   return (
+    <>
+    <header>
+        <nav>
+            <div className="logo">
+                <h4>runtime</h4>
+                <h4>Terror</h4>
+            </div>
+            <ul className="nav-links">
+                <li><a href="">Watch</a></li>
+                <li><a href="https://snake.wits.ai/">Home</a></li>
+                <li><a href="https://snake.wits.ai/docs">Docs</a></li>
+                <li><a href="https://snake.wits.ai/downloads">Downloads</a></li>
+                <li><a href="https://snake.wits.ai/help">Help</a></li>
+            </ul>
+        </nav>
+    </header>
     <div className="row">
         <div className="column left">
         <div id="header" className="alt">
@@ -665,7 +681,7 @@ function App() {
         </div>
         </div>
       </div>
-
+      </>
   );
 }
 

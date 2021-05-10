@@ -7,14 +7,34 @@ import App from './App';
 
 const parseCoords = require('./parseCoords');
 
-test('test header', () => {
+test('Test header', () => {
 
   act(() => {
     render(<App />);
   });
-  const linkElement = screen.getByText(/Snake AI Competition/i);
+  const linkElementHeader = screen.getByText(/Snake AI Competition/i);
+  expect(linkElementHeader).toBeInTheDocument();
+});
 
-  expect(linkElement).toBeInTheDocument();
+test('Test header links', () => {
+
+  act(() => {
+    render(<App />);
+  });
+  const linkElementWatch = screen.getByText(/Watch/i);
+  expect(linkElementWatch).toBeInTheDocument();
+
+  const linkElementHome = screen.getByText(/Home/i);
+  expect(linkElementHome).toBeInTheDocument();
+
+  const linkElementDocs = screen.getByText(/Docs/i);
+  expect(linkElementDocs).toBeInTheDocument();
+
+  const linkElementDownloads = screen.getByText(/Downloads/i);
+  expect(linkElementDownloads).toBeInTheDocument();
+
+  const linkElementHelp = screen.getByText(/Help/i);
+  expect(linkElementHelp).toBeInTheDocument();
 });
 
 
