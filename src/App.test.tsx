@@ -35,12 +35,6 @@ test('Test header links', () => {
 
   const linkElementHelp = screen.getByText(/Help/i);
   expect(linkElementHelp).toBeInTheDocument();
-
-  const linkElementRegister = screen.getByText(/Register/i);
-  expect(linkElementRegister).toBeInTheDocument();
-
-  const linkElementLogin = screen.getByText(/Login/i);
-  expect(linkElementLogin).toBeInTheDocument();
 });
 
 

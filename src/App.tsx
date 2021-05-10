@@ -558,13 +558,11 @@ function App() {
                 <h4>Terror</h4>
             </div>
             <ul className="nav-links">
-                <li><a href="#">Watch</a></li>
-                <li><a href="#">Home</a></li>
-                <li><a href="#">Docs</a></li>
-                <li><a href="#">Downloads</a></li>
-                <li><a href="#">Help</a></li>
-                <li><a href="#">Register</a></li>
-                <li><a href="#">Login</a></li>
+                <li><a href="">Watch</a></li>
+                <li><a href="https://snake.wits.ai/">Home</a></li>
+                <li><a href="https://snake.wits.ai/docs">Docs</a></li>
+                <li><a href="https://snake.wits.ai/downloads">Downloads</a></li>
+                <li><a href="https://snake.wits.ai/help">Help</a></li>
             </ul>
         </nav>
     </header>
