@@ -550,6 +550,24 @@ function App() {
           }, [paused,rewind,ffwd,drawCells,realtime]);
 
   return (
+    <>
+    <header>
+        <nav>
+            <div className="logo">
+                <h4>runtime</h4>
+                <h4>Terror</h4>
+            </div>
+            <ul className="nav-links">
+                <li><a href="#">Watch</a></li>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">Docs</a></li>
+                <li><a href="#">Downloads</a></li>
+                <li><a href="#">Help</a></li>
+                <li><a href="#">Register</a></li>
+                <li><a href="#">Login</a></li>
+            </ul>
+        </nav>
+    </header>
     <div className="row">
         <div className="column left">
         <div id="header" className="alt">
@@ -663,7 +681,7 @@ function App() {
           </table>
         </div>
       </div>
-
+      </>
   );
 }
 
