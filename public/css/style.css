@@ -1,4 +1,4 @@
-*{
+{
     margin: 0px;
     padding: 0px;
     box-sizing: border-box;
@@ -71,7 +71,7 @@ nav{
 
 .gamearea{
     width: 100%;
-    height: 100%;
+    height: 500px;
     text-align: center;
     font-family: Verdana, Geneva, Tahoma, sans-serif;
     padding-top: 64px;
