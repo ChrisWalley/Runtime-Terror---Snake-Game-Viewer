@@ -326,7 +326,7 @@ function resetGamestate()
 
 
 async function cacheGame(gameRef, game){
-  window.sessionStorage.clear();                               //This piece of code fetches data from api_url,
+  window.sessionStorage.clear();                                                
   window.sessionStorage.setItem("cachedGame",JSON.stringify(game));              //Crashes after storing too many games, so set to only store last 1
   //cachedGames.push(gameRef);
   console.log("Caching game: "+gameRef);
@@ -467,8 +467,7 @@ function getPlayers() {
 
 }
 
-
-function App() {
+function App()  {
   const viewerRef = React.useRef<HTMLCanvasElement>(null);
   const [context, setContext] = React.useState<CanvasRenderingContext2D | null>(null);
   const [response, setResponse] = useState("Connecting...");
@@ -647,39 +646,50 @@ function App() {
             </thead>
             <tbody>
               <tr>
-                <td>Person 1</td>
-                <td>134</td>
+                <td>ChrisWalley</td>
+                <td>72</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>Campbell184</td>
+                <td>5</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>Jatss</td>
+                <td>4</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>Siyabongajuju</td>
+                <td>3</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>RevashGovender</td>
+                <td>3</td>
                 <td>1</td>
               </tr>
               <tr>
-                <td>Person 2</td>
-                <td>89</td>
+                <td>Sibabalwe005</td>
                 <td>2</td>
-              </tr>
-              <tr>
-                <td>Person 3</td>
-                <td>65</td>
-                <td>3</td>
-              </tr>
-              <tr>
-                <td>Person 4</td>
-                <td>45</td>
-                <td>4</td>
-              </tr>
-              <tr>
-                <td>Person 5</td>
-                <td>27</td>
-                <td>5</td>
-              </tr>
-              <tr>
-                <td>Person 6</td>
-                <td>4</td>
-                <td>6</td>
+                <td>1</td>
               </tr>
             </tbody>
           </table>
         </div>
         </div>
+      </div>
+      <div style={{ visibility: "collapse"}} id="hiddenButtons" className="buttons">
+      <button onClick={() => {updatingByLogic = true;setPaused(prevState => prevState);}}>
+      {<i>triggerLogicUpdate</i>}
+      </button>
+      <button onClick={() => {resetGamestate(); cacheGame(1,1);}}>
+      {<i>triggerMiscFunctions</i>}
+      </button>
+      <button onClick={() => {drawGameboard();}}>
+      {<i>triggerDrawGameboard</i>}
+      </button>
       </div>
       </>
   );
