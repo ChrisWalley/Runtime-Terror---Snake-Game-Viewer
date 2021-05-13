@@ -210,7 +210,7 @@ function drawGameboard() {
         for (i = 0; i < snakeRects.length; i++) {
           viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
         }
-        viewerContext.drawImage(imageObj1,progBar.x+(currentGamestate/(config.game_height*config.game_height))*(config.game_height*blockSize)-3,progBar.y-2);
+      //  viewerContext.drawImage(imageObj1,progBar.x+(currentGamestate/(config.game_height*config.game_height))*(config.game_height*blockSize)-3,progBar.y-2);
 
     }
     else if (lastGameRef>=0){
@@ -606,6 +606,9 @@ function App() {
             <button onClick={() => {setPaused(false);setRewind(true);setFfwd(false); setRealtime(false);}}><i className="material-icons">fast_rewind</i></button>
             <button onClick={() => {setPaused(prevState => !prevState);setRewind(false);setFfwd(false); setRealtime(false);}}><i className="material-icons">{paused ? "play_circle_outline" : "pause_circle_outline"}</i></button>
             <button onClick={() => {setPaused(false);setRewind(false);setFfwd(true); setRealtime(false);}}><i className="material-icons">fast_forward</i></button>
+            <button onClick={() => {setPaused(false);setRewind(true);setFfwd(false); setRealtime(false);}}><i className="material-icons">settings_backup_restore</i></button>
+
+
             <button style={{ visibility: realtime ? "hidden" : "visible" }} onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(true);currentGamestate = realtimeGamestate}}>
             {<i className="material-icons">skip_next</i>}
             </button>
@@ -643,6 +646,8 @@ function App() {
                 <th>Name</th>
                 <th>Score</th>
                 <th>Division</th>
+                <th>Watch Game</th>
+                <th>View Stats</th>
               </tr>
             </thead>
             <tbody>
@@ -650,31 +655,47 @@ function App() {
                 <td>Person 1</td>
                 <td>134</td>
                 <td>1</td>
+                <td>  <button type="button">Watch Game</button></td>
+                <td><button type="button">View Stats</button></td>
+
               </tr>
+
               <tr>
                 <td>Person 2</td>
                 <td>89</td>
                 <td>2</td>
+                <td>  <button type="button">Watch Game</button></td>
+                <td><button type="button">View Stats</button></td>
               </tr>
               <tr>
                 <td>Person 3</td>
                 <td>65</td>
                 <td>3</td>
+                <td>  <button type="button">Watch Game</button></td>
+                <td><button type="button">View Stats</button></td>
               </tr>
               <tr>
                 <td>Person 4</td>
+
                 <td>45</td>
                 <td>4</td>
+                <td>  <button type="button">Watch Game</button></td>
+                <td><button type="button">View Stats</button></td>
               </tr>
               <tr>
                 <td>Person 5</td>
                 <td>27</td>
                 <td>5</td>
+                <td>  <button type="button">Watch Game</button></td>
+                <td><button type="button">View Stats</button></td>
+
               </tr>
               <tr>
                 <td>Person 6</td>
                 <td>4</td>
                 <td>6</td>
+                <td>  <button type="button">Watch Game</button></td>
+                <td><button type="button">View Stats</button></td>
               </tr>
             </tbody>
           </table>
