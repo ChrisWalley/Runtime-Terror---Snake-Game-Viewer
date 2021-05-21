@@ -47,7 +47,7 @@
     "@testing-library/jest-dom": "^5.11.10",
     "@types/jest": "^26.0.22",
     "@wojtekmaj/enzyme-adapter-react-17": "^0.6.1",
-    "canvas": "^2.7.0",
+    "canvas": "^2.8.0",
     "coveralls": "^3.1.0",
     "enzyme": "^3.11.0",
     "joi": "^17.4.0",
