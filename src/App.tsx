@@ -6,7 +6,7 @@ const COUNT_PATH = 'games/count';
 const fetch = require("node-fetch");
 
 const parseCoords = require('./parseCoords');
-
+var whatWatch =0;
 const canvasHeight = 550;
 const canvasWidth = 520;
 
@@ -234,6 +234,17 @@ function drawGameboard() {
       viewerContext.fillText("Snake 4", col1X, colStartY+350);
       viewerContext.fillText(lastGameSnake3Score, col2X, colStartY+350);
     }
+ if (whatWatch==1){// this is where we put all the stats
+  var col1X = 100;
+  var col2X = 350;
+  var colStartY = 50;
+  viewerContext.fillStyle = gameColours.border;
+  viewerContext.font = "30px Arial";
+  viewerContext.fillText("Statistics ", (col1X+col2X)/2-40, colStartY);
+  viewerContext.fillText("No Stats Available due to API", 80, colStartY+50);
+  resetGamestate();
+}
+
   }
 
   lastFrameID = requestAnimationFrame(drawGameboard);
@@ -479,6 +490,7 @@ function App() {
   const [ffwd, setFfwd] = useState(false);
   const [realtime, setRealtime] = useState(true);
   const [drawCells, setDrawCells] = useState(true);
+  const [whatSee, setWhatSee]= useState(0);
 
     useEffect(() => {
 
@@ -534,6 +546,7 @@ function App() {
               setRewind(gameRewind);
               setFfwd(gameFfwd);
               setRealtime(gameRealtime);
+
               updatingByLogic = false;
             }
             else {
@@ -548,6 +561,7 @@ function App() {
             }
             gameDrawCells = drawCells;
           }, [paused,rewind,ffwd,drawCells,realtime]);
+whatWatch=whatSee;//setting the state to either watch game or view stats
 
   return (
     <>
@@ -583,7 +597,10 @@ function App() {
           </select>
         </div>
         <div className="column middle">
-
+        <div id="StatsorGame" className="buttons">
+        <button onClick={() => {setWhatSee(0);setDrawCells(true);setPaused(false);}}><i className="material-icons">dashboard</i></button>
+        <button onClick={() => {setWhatSee(1);setDrawCells(false);setPaused(true);}}><i className="material-icons">list</i></button>
+         </div>
         <div
         id = "viewer"
         style={{float: 'left'}}>
@@ -640,6 +657,7 @@ function App() {
           float: 'right'
         }}>
           <h2>Leaderboard</h2>
+
           <table className="leaderboard-table">
             <thead>
               <tr>
