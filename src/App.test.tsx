@@ -21,8 +21,8 @@ test('Test header links', () => {
   act(() => {
     render(<App />);
   });
-  const linkElementWatch = screen.getByText(/Watch/i);
-  expect(linkElementWatch).toBeInTheDocument();
+  //const linkElementWatch = screen.getByText(/Watch/i);
+//  expect(linkElementWatch).toBeInTheDocument();
 
   const linkElementHome = screen.getByText(/Home/i);
   expect(linkElementHome).toBeInTheDocument();
