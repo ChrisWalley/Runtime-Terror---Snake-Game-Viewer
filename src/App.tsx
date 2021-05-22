@@ -481,7 +481,6 @@ function App() {
   const [ffwd, setFfwd] = useState(false);
   const [realtime, setRealtime] = useState(true);
   const [drawCells, setDrawCells] = useState(true);
-  const [whatSee, setWhatSee]= useState(0);
 
     useEffect(() => {
 
@@ -510,6 +509,7 @@ function App() {
         viewerContext = context;
         drawGameboard();
       }
+
     }, [context]);
 
         useEffect(() => {
@@ -552,7 +552,7 @@ function App() {
             }
             gameDrawCells = drawCells;
           }, [paused,rewind,ffwd,drawCells,realtime]);
-whatWatch=whatSee;//setting the state to either watch game or view stats
+
 
   return (
     <>
@@ -586,6 +586,12 @@ whatWatch=whatSee;//setting the state to either watch game or view stats
             </option>
           ))}
           </select>
+          <div>
+
+<button onClick={()=>{;}}>
+  View Statistics for current division
+</button>
+          </div>
         </div>
 
           <div className="column middle">
