@@ -210,7 +210,7 @@ function drawGameboard() {
         for (i = 0; i < snakeRects.length; i++) {
           viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
         }
-      //  viewerContext.drawImage(imageObj1,progBar.x+(currentGamestate/(config.game_height*config.game_height))*(config.game_height*blockSize)-3,progBar.y-2);
+        viewerContext.drawImage(imageObj1,progBar.x+(currentGamestate/(config.game_height*config.game_height))*(config.game_height*blockSize)-3,progBar.y-2);
 
     }
     else if (lastGameRef>=0){
@@ -234,16 +234,7 @@ function drawGameboard() {
       viewerContext.fillText("Snake 4", col1X, colStartY+350);
       viewerContext.fillText(lastGameSnake3Score, col2X, colStartY+350);
     }
- if (whatWatch==1){// this is where we put all the stats
-  var col1X = 100;
-  var col2X = 350;
-  var colStartY = 50;
-  viewerContext.fillStyle = gameColours.border;
-  viewerContext.font = "30px Arial";
-  viewerContext.fillText("Statistics ", (col1X+col2X)/2-40, colStartY);
-  viewerContext.fillText("No Stats Available due to API", 80, colStartY+50);
-  resetGamestate();
-}
+
 
   }
 
@@ -580,9 +571,9 @@ whatWatch=whatSee;//setting the state to either watch game or view stats
             </ul>
         </nav>
     </header>
-    <div className="row">
+<div className="row">
         <div className="column left">
-        <div id="header" className="alt">
+          <div id="header" className="alt">
                 <a className="logo" href="/"><strong>Snake AI Competition</strong> 2020</a>
             </div>
           <h2>Division</h2>
@@ -596,62 +587,85 @@ whatWatch=whatSee;//setting the state to either watch game or view stats
           ))}
           </select>
         </div>
-        <div className="column middle">
-        <div id="StatsorGame" className="buttons">
-        <button onClick={() => {setWhatSee(0);setDrawCells(true);setPaused(false);}}><i className="material-icons">dashboard</i></button>
-        <button onClick={() => {setWhatSee(1);setDrawCells(false);setPaused(true);}}><i className="material-icons">list</i></button>
+
+          <div className="column middle">
+
+      <div id="slider">
+        <input type="radio" name="slider" id="slide1" checked/>
+        <input type="radio" name="slider" id="slide2"/>
+
+        <div id="slides">
+           <div id="overflow">
+              <div className="inner">
+
+
+                 <div className="slide slide_1">
+                    <div className="slide-content">
+                       <h2>Current Game</h2>
+                       <div
+                       id = "viewer"
+                       style={{float: 'left'}}>
+                         <canvas
+                           id="viewer"
+                           ref={viewerRef}
+                           width={canvasWidth}
+                           height={canvasHeight}
+                           style={{
+                             border: '2px solid #000',
+                             marginTop: 10,
+                             float: 'left'
+                           }}
+                         ></canvas>
+
+
+
+
+                     </div>
+                     <div id="viewerTimeControls" className="buttons">
+                       <button onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(false);currentGamestate = startedViewingGamestate}}><i className="material-icons">skip_previous</i></button>
+                       <button onClick={() => {setPaused(false);setRewind(true);setFfwd(false); setRealtime(false);}}><i className="material-icons">fast_rewind</i></button>
+                       <button onClick={() => {setPaused(prevState => !prevState);setRewind(false);setFfwd(false); setRealtime(false);}}><i className="material-icons">{paused ? "play_circle_outline" : "pause_circle_outline"}</i></button>
+                       <button onClick={() => {setPaused(false);setRewind(false);setFfwd(true); setRealtime(false);}}><i className="material-icons">fast_forward</i></button>
+                       <button onClick={() => {setPaused(false);setRewind(true);setFfwd(false); setRealtime(false);}}><i className="material-icons">settings_backup_restore</i></button>
+                         <button onClick={() => {setDrawCells(prevState => !prevState)}}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
+                      <button style={{ visibility: realtime ? "hidden" : "visible" }} onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(true);currentGamestate = realtimeGamestate}}>{<i className="material-icons">skip_next</i>}</button>
+
+                      </div>
+                     </div>
+                     </div>
+
+
+                    <div className="slide slide_2">
+                        <div className="slide-content">
+                           <h2>Statistics</h2>
+                        </div>
+                    </div>
+
+
+
+            </div>
+            <div id="controls">
+               <label htmlFor="slide1"></label>
+               <label htmlFor="slide2"></label>
+            </div>
+            <div id="bullets">
+               <label htmlFor="slide1"></label>
+               <label htmlFor="slide2"></label>
+            </div>
          </div>
-        <div
-        id = "viewer"
-        style={{float: 'left'}}>
-          <canvas
-            id="viewer"
-            ref={viewerRef}
-            width={canvasWidth}
-            height={canvasHeight}
-            style={{
-              border: '2px solid #000',
-              marginTop: 10,
-              float: 'left'
-            }}
-          ></canvas>
-
-          <div>
-
-          <div id="viewerTimeControls" className="buttons">
-            <button onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(false);currentGamestate = startedViewingGamestate}}><i className="material-icons">skip_previous</i></button>
-            <button onClick={() => {setPaused(false);setRewind(true);setFfwd(false); setRealtime(false);}}><i className="material-icons">fast_rewind</i></button>
-            <button onClick={() => {setPaused(prevState => !prevState);setRewind(false);setFfwd(false); setRealtime(false);}}><i className="material-icons">{paused ? "play_circle_outline" : "pause_circle_outline"}</i></button>
-            <button onClick={() => {setPaused(false);setRewind(false);setFfwd(true); setRealtime(false);}}><i className="material-icons">fast_forward</i></button>
-            <button onClick={() => {setPaused(false);setRewind(true);setFfwd(false); setRealtime(false);}}><i className="material-icons">settings_backup_restore</i></button>
 
 
-            <button style={{ visibility: realtime ? "hidden" : "visible" }} onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(true);currentGamestate = realtimeGamestate}}>
-            {<i className="material-icons">skip_next</i>}
-            </button>
-          </div>
-          <div id="viewerLookControls" className="buttons">
-          <button onClick={() => {setDrawCells(prevState => !prevState)}}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
-          </div>
-          <p>
-          {"Game number: "+gameRef}
-          </p>
-          <p>
-          {response}
-          </p>
-          <p>
-          {cachedGamesList}
-          </p>
-              <p className="copyright">
-                Kludged together with duct tape and prayers
-                  <br/>
-                  © Runtime Terror
-                  <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="Congrats! You found it..." id="hints">
-                      <i className="fa fa-television"></i>
-                  </a>
-                  <br/>University of the Witwatersrand, South Africa</p>
-          </div>
+
         </div>
+</div>
+
+
+</div>
+
+
+
+
+
 
         <div className="column right" style={{
           float: 'right'
@@ -717,10 +731,10 @@ whatWatch=whatSee;//setting the state to either watch game or view stats
               </tr>
             </tbody>
           </table>
-        </div>
-        </div>
-      </div>
-      </>
+
+  </div>
+</div>
+</>
   );
 }
 
