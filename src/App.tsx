@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Leaderboard from "./Leaderboard";
 
 const ENDPOINT = "http://walleyco.de:3001";
 const CONFIG_PATH = 'games/config';
@@ -438,7 +439,6 @@ function refreshLeaderboardAndDivisions()
   getPlayers();
 }
 
-
 function getDivisions() {
 /*
 This function will be used to fill in the divisions for the game.
@@ -468,7 +468,42 @@ divisions = [];
 
 
 function getPlayers() {
+  buildLeaderboard([["Player1", "16", "0"], ["Player2", "12", "0"],["Player3", "11", "0"],
+["Player4", "9", "0"],["Player5", "7", "1"],["Player6", "6", "1"],["Player7", "2", "1"],]);
+}
 
+function buildLeaderboard(tableData) {
+  var tableBody = document.getElementById('leaderboardbody');
+
+  tableData.forEach(function(rowData) {
+    var row = document.createElement('tr');
+
+    var cellName = document.createElement('td');
+    cellName.appendChild(document.createTextNode(rowData[0]));
+    row.appendChild(cellName);
+
+    var cellScore = document.createElement('td');
+    var linkScore = document.createElement('a');
+    linkScore.href="#"
+    linkScore.textContent=rowData[1];
+    cellScore.appendChild(linkScore);
+    row.appendChild(cellScore);
+
+    var cellDiv = document.createElement('td');
+    var linkDiv = document.createElement('a');
+    linkDiv.href="WatchGame?div="+rowData[2]
+    linkDiv.textContent=rowData[2]
+    cellDiv.appendChild(linkDiv);
+    row.appendChild(cellDiv);
+
+    tableBody?.appendChild(row);
+  });
+}
+
+function handleClick(e)
+{
+  e.preventDefault();
+  console.log("Test");
 }
 
 function App()  {
@@ -635,53 +670,12 @@ function App()  {
                   <br/>University of the Witwatersrand, South Africa</p>
           </div>
         </div>
+        </div>
 
         <div className="column right" style={{
           float: 'right'
         }}>
-          <h2>Leaderboard</h2>
-          <table className="leaderboard-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Score</th>
-                <th>Division</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>ChrisWalley</td>
-                <td>72</td>
-                <td>0</td>
-              </tr>
-              <tr>
-                <td>Campbell184</td>
-                <td>5</td>
-                <td>0</td>
-              </tr>
-              <tr>
-                <td>Jatss</td>
-                <td>4</td>
-                <td>0</td>
-              </tr>
-              <tr>
-                <td>Siyabongajuju</td>
-                <td>3</td>
-                <td>0</td>
-              </tr>
-              <tr>
-                <td>RevashGovender</td>
-                <td>3</td>
-                <td>1</td>
-              </tr>
-              <tr>
-                <td>Sibabalwe005</td>
-                <td>2</td>
-                <td>1</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <Leaderboard />
         </div>
       </div>
       <div style={{ visibility: "collapse"}} id="hiddenButtons" className="buttons">
