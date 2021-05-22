@@ -18,9 +18,6 @@ test('Test header and leaderboard', () => {
   const linkElementHeader = screen.getByText(/Snake AI Competition/i);
   expect(linkElementHeader).toBeInTheDocument();
 
-  const linkElementLeaderboard = screen.getByText(/Leaderboard/i);
-  expect(linkElementLeaderboard).toBeInTheDocument();
-
   const linkElementBtnFastRewind = screen.getByText(/fast_rewind/i);
   fireEvent.click(linkElementBtnFastRewind);
 });

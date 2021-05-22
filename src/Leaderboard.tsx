@@ -24,10 +24,8 @@ const Leaderboard = () => {
     }
 
     const getData = async () => {
-
         const response = await axios.get(URL)
         return response;
-
     }
 
     const renderHeader = () => {
@@ -64,6 +62,9 @@ const Leaderboard = () => {
                     {renderBody()}
                 </tbody>
             </table>
+            <button onClick={() => {handleUsernameClick("1"); handleScoreClick("1");}}>
+            {<i>triggerClickFunctions</i>}
+            </button>
         </>
     )
 }
