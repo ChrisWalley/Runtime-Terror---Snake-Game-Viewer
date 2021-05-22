@@ -6,9 +6,14 @@ const URL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snak
 const Leaderboard = () => {
     const [players, setPlayers] = useState([])
 
+
     useEffect(() => {
-        getData()
-    }, [])
+      let isMounted = true;               // note mutable flag
+      getData().then(response => {
+        if (isMounted) setPlayers(response.data);    // add conditional check
+      })
+      return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
+    }, []);
 
     function handleUsernameClick(e) {
     console.log(e);
@@ -21,15 +26,8 @@ const Leaderboard = () => {
     const getData = async () => {
 
         const response = await axios.get(URL)
-        setPlayers(response.data)
-    }
+        return response;
 
-    const removeData = (id) => {
-
-        axios.delete(`${URL}/${id}`).then(res => {
-            const del = players.filter(player => id !== player.id)
-            setPlayers(del)
-        })
     }
 
     const renderHeader = () => {
