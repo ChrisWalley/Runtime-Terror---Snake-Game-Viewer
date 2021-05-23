@@ -1,0 +1,74 @@
+[
+  {
+    "id": 0,
+    "username": "ChrisWalley",
+    "max_length": "35",
+    "avg_length": "30",
+    "no_of_kills":"40",
+    "score": "50"
+  },
+  {
+    "id": 1,
+    "username": "Danny-dude",
+    "max_length": "33",
+    "avg_length": "29",
+    "no_of_kills":"35",
+    "score": "49"
+  },
+  {
+    "id": 2,
+    "username": "Siyabongajuju",
+    "max_length": "30",
+    "avg_length": "28",
+    "no_of_kills":"33",
+    "score": "45"
+  },
+  {
+    "id": 3,
+    "username": "TalhaSalmanMinhas",
+    "max_length": "28",
+    "avg_length": "25",
+    "no_of_kills":"32",
+    "score": "41"
+  },
+  {
+    "id": 4,
+    "username": "Nkosiyaphila",
+    "max_length": "25",
+    "avg_length": "23",
+    "no_of_kills":"29",
+    "score": "36"
+  },
+  {
+    "id": 5,
+    "username": "campbell184",
+    "max_length": "23",
+    "avg_length": "20",
+    "no_of_kills":"24",
+    "score": "32"
+  },
+  {
+    "id": 6,
+    "username": "RevashGovender",
+    "max_length": "20",
+    "avg_length": "18",
+    "no_of_kills":"21",
+    "score": "28"
+  },
+  {
+    "id": 7,
+    "username": "Sibabalwe005",
+    "max_length": "15",
+    "avg_length": "13",
+    "no_of_kills":"17",
+    "score": "24"
+  },
+  {
+    "id": 8,
+    "username": "Jatss",
+    "max_length": "13",
+    "avg_length": "10",
+    "no_of_kills":"15",
+    "score": "18"
+  }
+]
