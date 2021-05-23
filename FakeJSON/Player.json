@@ -1,12 +1,12 @@
 [
   {
-    "id": 1,
+    "id": 0,
     "username": "ChrisWalley",
     "score": "50",
     "division": "0"
   },
   {
-    "id": 2,
+    "id": 1,
     "username": "Danny-dude",
     "score": "49",
     "division": "0"
@@ -30,25 +30,25 @@
     "division": "0"
   },
   {
-    "id": 4,
+    "id": 5,
     "username": "campbell184",
     "score": "32",
     "division": "0"
   },
   {
-    "id": 4,
+    "id": 6,
     "username": "RevashGovender",
     "score": "28",
     "division": "0"
   },
   {
-    "id": 4,
+    "id": 7,
     "username": "Sibabalwe005",
     "score": "24",
     "division": "0"
   },
   {
-    "id": 4,
+    "id": 8,
     "username": "Jatss",
     "score": "18",
     "division": "0"
