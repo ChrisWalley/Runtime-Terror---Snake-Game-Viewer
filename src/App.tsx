@@ -438,7 +438,7 @@ function updateGameState()
 function refreshLeaderboardAndDivisions()
 {
   getDivisions();
-  getPlayers();
+  //getPlayers();
 }
 
 function getDivisions() {
@@ -468,45 +468,6 @@ divisions = [];
  }
 }
 
-
-function getPlayers() {
-  buildLeaderboard([["Player1", "16", "0"], ["Player2", "12", "0"],["Player3", "11", "0"],
-["Player4", "9", "0"],["Player5", "7", "1"],["Player6", "6", "1"],["Player7", "2", "1"],]);
-}
-
-function buildLeaderboard(tableData) {
-  var tableBody = document.getElementById('leaderboardbody');
-
-  tableData.forEach(function(rowData) {
-    var row = document.createElement('tr');
-
-    var cellName = document.createElement('td');
-    cellName.appendChild(document.createTextNode(rowData[0]));
-    row.appendChild(cellName);
-
-    var cellScore = document.createElement('td');
-    var linkScore = document.createElement('a');
-    linkScore.href="#"
-    linkScore.textContent=rowData[1];
-    cellScore.appendChild(linkScore);
-    row.appendChild(cellScore);
-
-    var cellDiv = document.createElement('td');
-    var linkDiv = document.createElement('a');
-    linkDiv.href="WatchGame?div="+rowData[2]
-    linkDiv.textContent=rowData[2]
-    cellDiv.appendChild(linkDiv);
-    row.appendChild(cellDiv);
-
-    tableBody?.appendChild(row);
-  });
-}
-
-function handleClick(e)
-{
-  e.preventDefault();
-  console.log("Test");
-}
 
 function App()  {
   const viewerRef = React.useRef<HTMLCanvasElement>(null);
@@ -609,11 +570,11 @@ function App()  {
             </ul>
         </nav>
     </header>
-<div className="row">
+    <div className="row">
         <div className="column left">
           <div id="header" className="alt">
                 <a className="logo" href="/"><strong>Snake AI Competition</strong> 2020</a>
-            </div>
+          </div>
           <h2>Division</h2>
           <select>
           {divisions.map(division => (
@@ -622,112 +583,85 @@ function App()  {
               value={division.value}>
               {division.label}
             </option>
-          ))}
+            ))}
           </select>
           <div>
-
-<button onClick={()=>{;}}>
-  View Statistics for current division
-</button>
+            <button onClick={()=>{;}}>
+              View Statistics for current division
+            </button>
           </div>
         </div>
-        </div>
 
-          <div className="column middle">
+        <div className="column middle">
+          <div id="slider">
+            <input type="radio" name="slider" id="slide1" checked/>
+            <input type="radio" name="slider" id="slide2"/>
 
-      <div id="slider">
-        <input type="radio" name="slider" id="slide1" checked/>
-        <input type="radio" name="slider" id="slide2"/>
-
-        <div id="slides">
-           <div id="overflow">
-              <div className="inner">
-
-
-                 <div className="slide slide_1">
-                    <div className="slide-content">
-                       <h2>Current Game</h2>
-                       <div
-                       id = "viewer"
-                       style={{float: 'left'}}>
-                         <canvas
-                           id="viewer"
-                           ref={viewerRef}
-                           width={canvasWidth}
-                           height={canvasHeight}
-                           style={{
-                             border: '2px solid #000',
-                             marginTop: 10,
-                             float: 'left'
-                           }}
-                         ></canvas>
-
-
-
-
-                     </div>
-                     <div id="viewerTimeControls" className="buttons">
-                       <button onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(false);currentGamestate = startedViewingGamestate}}><i className="material-icons">skip_previous</i></button>
-                       <button onClick={() => {setPaused(false);setRewind(true);setFfwd(false); setRealtime(false);}}><i className="material-icons">fast_rewind</i></button>
-                       <button onClick={() => {setPaused(prevState => !prevState);setRewind(false);setFfwd(false); setRealtime(false);}}><i className="material-icons">{paused ? "play_circle_outline" : "pause_circle_outline"}</i></button>
-                       <button onClick={() => {setPaused(false);setRewind(false);setFfwd(true); setRealtime(false);}}><i className="material-icons">fast_forward</i></button>
-                       <button onClick={() => {setPaused(false);setRewind(true);setFfwd(false); setRealtime(false);}}><i className="material-icons">settings_backup_restore</i></button>
+            <div id="slides">
+             <div id="overflow">
+                <div className="inner">
+                   <div className="slide slide_1">
+                      <div className="slide-content">
+                         <h2>Current Game</h2>
+                         <div
+                         id = "viewer"
+                         style={{float: 'left'}}>
+                           <canvas
+                             id="viewer"
+                             ref={viewerRef}
+                             width={canvasWidth}
+                             height={canvasHeight}
+                             style={{
+                               border: '2px solid #000',
+                               marginTop: 10,
+                               float: 'left'
+                             }}
+                           ></canvas>
+                        </div>
+                        <div id="viewerTimeControls" className="buttons">
+                         <button onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(false);currentGamestate = startedViewingGamestate}}><i className="material-icons">skip_previous</i></button>
+                         <button onClick={() => {setPaused(false);setRewind(true);setFfwd(false); setRealtime(false);}}><i className="material-icons">fast_rewind</i></button>
+                         <button onClick={() => {setPaused(prevState => !prevState);setRewind(false);setFfwd(false); setRealtime(false);}}><i className="material-icons">{paused ? "play_circle_outline" : "pause_circle_outline"}</i></button>
+                         <button onClick={() => {setPaused(false);setRewind(false);setFfwd(true); setRealtime(false);}}><i className="material-icons">fast_forward</i></button>
+                         <button onClick={() => {setPaused(false);setRewind(true);setFfwd(false); setRealtime(false);}}><i className="material-icons">settings_backup_restore</i></button>
                          <button onClick={() => {setDrawCells(prevState => !prevState)}}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
-                      <button style={{ visibility: realtime ? "hidden" : "visible" }} onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(true);currentGamestate = realtimeGamestate}}>{<i className="material-icons">skip_next</i>}</button>
+                        <button style={{ visibility: realtime ? "hidden" : "visible" }} onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(true);currentGamestate = realtimeGamestate}}>{<i className="material-icons">skip_next</i>}</button>
 
-                      </div>
+                        </div>
+                       </div>
                      </div>
-                     </div>
-
-
-                    <div className="slide slide_2">
+                     <div className="slide slide_2">
                         <div className="slide-content">
                            <h2>Statistics</h2>
                         </div>
                     </div>
-
-
-
+              </div>
+              <div id="controls">
+                 <label htmlFor="slide1"></label>
+                 <label htmlFor="slide2"></label>
+              </div>
+              <div id="bullets">
+                 <label htmlFor="slide1"></label>
+                 <label htmlFor="slide2"></label>
+              </div>
+           </div>
             </div>
-            <div id="controls">
-               <label htmlFor="slide1"></label>
-               <label htmlFor="slide2"></label>
-            </div>
-            <div id="bullets">
-               <label htmlFor="slide1"></label>
-               <label htmlFor="slide2"></label>
-            </div>
-         </div>
-
-
-
+          </div>
         </div>
-</div>
-
-
-</div>
-
-
-
-
-
-
-        <div className="column right" style={{
-          float: 'right'
-        }}>
-        <Leaderboard />
+        <div className="column right" style={{float: 'right'}}>
+            <Leaderboard />
         </div>
-      </div>
-      <div style={{ visibility: "collapse"}} id="hiddenButtons" className="buttons">
-      <button onClick={() => {updatingByLogic = true;setPaused(prevState => prevState);}}>
-      {<i>triggerLogicUpdate</i>}
-      </button>
-      <button onClick={() => {resetGamestate(); cacheGame(1,1);}}>
-      {<i>triggerMiscFunctions</i>}
-      </button>
-      <button onClick={() => {drawGameboard();}}>
-      {<i>triggerDrawGameboard</i>}
-      </button>
+        <div style={{ visibility: "collapse"}} id="hiddenButtons" className="buttons">
+          <button onClick={() => {updatingByLogic = true;setPaused(prevState => prevState);}}>
+            {<i>triggerLogicUpdate</i>}
+          </button>
+          <button onClick={() => {resetGamestate(); cacheGame(1,1);}}>
+            {<i>triggerMiscFunctions</i>}
+          </button>
+          <button onClick={() => {drawGameboard();}}>
+          {<i>triggerDrawGameboard</i>}
+          </button>
+        </div>
       </div>
       </>
   );

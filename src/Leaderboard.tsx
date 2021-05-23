@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+  import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 
 const URL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Player.json'
@@ -62,9 +62,12 @@ const Leaderboard = () => {
                     {renderBody()}
                 </tbody>
             </table>
+            <div style={{ visibility: "collapse"}} id="hiddenButtons" className="buttons">
             <button onClick={() => {handleUsernameClick("1"); handleScoreClick("1");}}>
             {<i>triggerClickFunctions</i>}
             </button>
+            </div>
+
         </>
     )
 }
