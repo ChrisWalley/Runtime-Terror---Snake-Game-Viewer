@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Leaderboard from "./Leaderboard";
 
 const ENDPOINT = "http://walleyco.de:3001";
 const CONFIG_PATH = 'games/config';
@@ -17,8 +18,13 @@ const startY = 10;
 var appleX = 0;
 var appleY = 0;
 
-var currentGamestate = -1
-var realtimeGamestate = -1
+var lastAppleX = 0;
+var lastAppleY = 0;
+
+var appleHealth = 5;
+
+var currentGamestate = -1;
+var realtimeGamestate = -1;
 
 var lastGameRef = -1;
 var lastGameSnake0Score = -1;
@@ -68,21 +74,21 @@ var gameColours =
   snake1: 'rgb(108,50,108)',
   snake2: 'rgb(20,0,100)',
   snake3: 'rgb(0,205,108)'
-}
+};
 
 var appleCol =
 {
   r:0,
   g:0,
   b:0
-}
+};
 
 var progBar = {
   x:0,
   y:0,
   width:0,
   height:0
-}
+};
 
 var imageObj1 = new Image();
 imageObj1.src = 'https://www.walleyco.de/snake.png'
@@ -107,17 +113,17 @@ function drawGameboard() {
       {
         x:startX,
         y:startY + config.game_height*blockSize + 20,
-        width:(realtimeGamestate/(config.game_height*config.game_height))*(config.game_height*blockSize),
+        width:(realtimeGamestate/config.gameFrames),
         height:blockSize+3
       }
         viewerContext.fillStyle = gameColours.progressBarGreen;         //Draws progress bar at bottom - current position
-        viewerContext.fillRect(startX, startY + config.game_width*blockSize + 20, (currentGamestate/(config.game_width*config.game_height))*(config.game_width*blockSize), progBar.height);
+        viewerContext.fillRect(startX, progBar.y, (currentGamestate/config.gameFrames)*(config.game_width*blockSize), progBar.height);
 
         viewerContext.fillStyle = gameColours.progressBarBlue;         //Draws progress bar at bottom - real gametime
-        viewerContext.fillRect(startX + (realtimeGamestate/(config.game_width*config.game_width))*(config.game_height*blockSize) -2 , startY + config.game_height*blockSize + 20, 4, progBar.height);
+        viewerContext.fillRect(startX + progBar.width*(config.game_height*blockSize) -2 , progBar.y, 4, progBar.height);
 
         viewerContext.fillStyle = gameColours.progressBarRed;         //Draws progress bar at bottom - started viewing gametime
-        viewerContext.fillRect(startX + (startedViewingGamestate/(config.game_width*config.game_width))*(config.game_height*blockSize) -2, startY + config.game_height*blockSize + 20, 4, progBar.height);
+        viewerContext.fillRect(startX + (startedViewingGamestate/config.gameFrames)*(config.game_height*blockSize) -2, progBar.y, 4, progBar.height);
 
 
 
@@ -170,7 +176,6 @@ function drawGameboard() {
         }
 
         //Obstacle 2
-
         obsRects = parseCoords(gameState.obstacle2,obsStartIndex);
         for (i = 0; i < obsRects.length; i++) {
           viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
@@ -210,8 +215,7 @@ function drawGameboard() {
         for (i = 0; i < snakeRects.length; i++) {
           viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
         }
-        viewerContext.drawImage(imageObj1,progBar.x+(currentGamestate/(config.game_height*config.game_height))*(config.game_height*blockSize)-3,progBar.y-2);
-
+        viewerContext.drawImage(imageObj1,progBar.x+(currentGamestate/config.gameFrames)*(config.game_height*blockSize)-3,progBar.y-2);
     }
     else if (lastGameRef>=0){
       var col1X = 100;
@@ -328,7 +332,7 @@ function resetGamestate()
 
 
 async function cacheGame(gameRef, game){
-  window.sessionStorage.clear();                               //This piece of code fetches data from api_url,
+  window.sessionStorage.clear();
   window.sessionStorage.setItem("cachedGame",JSON.stringify(game));              //Crashes after storing too many games, so set to only store last 1
   //cachedGames.push(gameRef);
   console.log("Caching game: "+gameRef);
@@ -355,45 +359,46 @@ function updateGameState()
   //This will fetch the current game state from the server
   if(true)
   {
+    if(realtimeGamestate>config.gameFrames)
+    {
+      realtimeGamestate = 0;
+    }
+
+    if(appleX == lastAppleX && appleY == lastAppleY)
+    {
+      appleHealth-=config.decay_rate;
+    }
+    else
+    {
+      appleHealth = 5;
+      lastAppleX = appleX;
+      lastAppleY = appleY;
+    }
+
+    if(appleHealth < -5)
+    {
+      appleX = Math.floor(Math.random() * config.game_width);
+      appleY = Math.floor(Math.random() * config.game_height);
+    }
+
     realtimeGamestate++;
-    appleX++;
-    if(appleX > 49)
-    {
-      appleX = 0;
-      appleY++;
-      if(appleY > 49)
-      {
-        appleY = 0;
-      }
-    }
-    appleCol.r++;
-    if(appleCol.r > 255)
-    {
-      appleCol.r=0;
-      appleCol.g++;
-      if(appleCol.g > 255)
-      {
-        appleCol.g=0;
-        appleCol.b++;
-        if(appleCol.b > 255)
-        {
-          appleCol.b=0;
-        }
-      }
-    }
+
+    appleCol.r = (appleHealth+5) * 25.5;
+    appleCol.g = (appleHealth+5) * 21.5;
+
     gameColours.apple = 'rgb('+appleCol.r+','+appleCol.g+','+appleCol.b+')';
     gameStateArr[realtimeGamestate] =
     {
       ref: 0,
       state: 0,
       apple: appleX+" "+appleY,
-      obstacle0: "",
-      obstacle1: "",
-      obstacle2: "",
-      snake0: "",
-      snake1: "",
-      snake2: "",
-      snake3: "",
+      obstacle0: "1 16,32 16,36",
+      obstacle1: "2 47,26 43,26",
+      obstacle2: "0 30,21 26,21",
+      snake0: "0 alive 26 2 9,5 3,5 3,9 17,9",
+      snake1: "1 alive 15 2 48,16 45,16 45,10",
+      snake2: "2 alive 32 2 33,38 19,38",
+      snake3: "3 alive 7 2 1,47 6,47 6,30 8,30",
       snake0Score: 0,
       snake1Score: 0,
       snake2Score: 0,
@@ -436,7 +441,6 @@ function refreshLeaderboardAndDivisions()
   getPlayers();
 }
 
-
 function getDivisions() {
 /*
 This function will be used to fill in the divisions for the game.
@@ -466,11 +470,45 @@ divisions = [];
 
 
 function getPlayers() {
-
+  buildLeaderboard([["Player1", "16", "0"], ["Player2", "12", "0"],["Player3", "11", "0"],
+["Player4", "9", "0"],["Player5", "7", "1"],["Player6", "6", "1"],["Player7", "2", "1"],]);
 }
 
+function buildLeaderboard(tableData) {
+  var tableBody = document.getElementById('leaderboardbody');
 
-function App() {
+  tableData.forEach(function(rowData) {
+    var row = document.createElement('tr');
+
+    var cellName = document.createElement('td');
+    cellName.appendChild(document.createTextNode(rowData[0]));
+    row.appendChild(cellName);
+
+    var cellScore = document.createElement('td');
+    var linkScore = document.createElement('a');
+    linkScore.href="#"
+    linkScore.textContent=rowData[1];
+    cellScore.appendChild(linkScore);
+    row.appendChild(cellScore);
+
+    var cellDiv = document.createElement('td');
+    var linkDiv = document.createElement('a');
+    linkDiv.href="WatchGame?div="+rowData[2]
+    linkDiv.textContent=rowData[2]
+    cellDiv.appendChild(linkDiv);
+    row.appendChild(cellDiv);
+
+    tableBody?.appendChild(row);
+  });
+}
+
+function handleClick(e)
+{
+  e.preventDefault();
+  console.log("Test");
+}
+
+function App()  {
   const viewerRef = React.useRef<HTMLCanvasElement>(null);
   const [context, setContext] = React.useState<CanvasRenderingContext2D | null>(null);
   const [response, setResponse] = useState("Connecting...");
@@ -593,6 +631,7 @@ function App() {
 </button>
           </div>
         </div>
+        </div>
 
           <div className="column middle">
 
@@ -676,71 +715,21 @@ function App() {
         <div className="column right" style={{
           float: 'right'
         }}>
-          <h2>Leaderboard</h2>
-
-          <table className="leaderboard-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Score</th>
-                <th>Division</th>
-                <th>Watch Game</th>
-                <th>View Stats</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Person 1</td>
-                <td>134</td>
-                <td>1</td>
-                <td>  <button type="button">Watch Game</button></td>
-                <td><button type="button">View Stats</button></td>
-
-              </tr>
-
-              <tr>
-                <td>Person 2</td>
-                <td>89</td>
-                <td>2</td>
-                <td>  <button type="button">Watch Game</button></td>
-                <td><button type="button">View Stats</button></td>
-              </tr>
-              <tr>
-                <td>Person 3</td>
-                <td>65</td>
-                <td>3</td>
-                <td>  <button type="button">Watch Game</button></td>
-                <td><button type="button">View Stats</button></td>
-              </tr>
-              <tr>
-                <td>Person 4</td>
-
-                <td>45</td>
-                <td>4</td>
-                <td>  <button type="button">Watch Game</button></td>
-                <td><button type="button">View Stats</button></td>
-              </tr>
-              <tr>
-                <td>Person 5</td>
-                <td>27</td>
-                <td>5</td>
-                <td>  <button type="button">Watch Game</button></td>
-                <td><button type="button">View Stats</button></td>
-
-              </tr>
-              <tr>
-                <td>Person 6</td>
-                <td>4</td>
-                <td>6</td>
-                <td>  <button type="button">Watch Game</button></td>
-                <td><button type="button">View Stats</button></td>
-              </tr>
-            </tbody>
-          </table>
-
-  </div>
-</div>
-</>
+        <Leaderboard />
+        </div>
+      </div>
+      <div style={{ visibility: "collapse"}} id="hiddenButtons" className="buttons">
+      <button onClick={() => {updatingByLogic = true;setPaused(prevState => prevState);}}>
+      {<i>triggerLogicUpdate</i>}
+      </button>
+      <button onClick={() => {resetGamestate(); cacheGame(1,1);}}>
+      {<i>triggerMiscFunctions</i>}
+      </button>
+      <button onClick={() => {drawGameboard();}}>
+      {<i>triggerDrawGameboard</i>}
+      </button>
+      </div>
+      </>
   );
 }
 
