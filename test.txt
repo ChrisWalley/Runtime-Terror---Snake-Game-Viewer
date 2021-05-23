@@ -81,3 +81,89 @@
       at step (src/Leaderboard.tsx:44:23)
       at Object.next (src/Leaderboard.tsx:25:53)
 
+
+> snakeboard@0.1.0 test
+> jest
+
+
+> snakeboard@0.1.0 test
+> jest
+
+  console.error
+    Warning: You provided a `checked` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultChecked`. Otherwise, set either `onChange` or `readOnly`.
+        at input
+        at div
+        at div
+        at div
+        at App (/home/chris/Documents/Uni/Project/Runtime-Terror---Snake-Game-Viewer/src/App.tsx:475:27)
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:67:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:43:5)
+      at checkControlledValueProps (node_modules/react-dom/cjs/react-dom.development.js:1327:7)
+      at initWrapperState (node_modules/react-dom/cjs/react-dom.development.js:1495:5)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom.development.js:9099:7)
+      at finalizeInitialChildren (node_modules/react-dom/cjs/react-dom.development.js:10201:3)
+      at completeWork (node_modules/react-dom/cjs/react-dom.development.js:19470:17)
+
+  console.error
+    Warning: You provided a `checked` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultChecked`. Otherwise, set either `onChange` or `readOnly`.
+        at input
+        at div
+        at div
+        at div
+        at App (/home/chris/Documents/Uni/Project/Runtime-Terror---Snake-Game-Viewer/src/App.tsx:475:27)
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:67:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:43:5)
+      at checkControlledValueProps (node_modules/react-dom/cjs/react-dom.development.js:1327:7)
+      at initWrapperState (node_modules/react-dom/cjs/react-dom.development.js:1495:5)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom.development.js:9099:7)
+      at finalizeInitialChildren (node_modules/react-dom/cjs/react-dom.development.js:10201:3)
+      at completeWork (node_modules/react-dom/cjs/react-dom.development.js:19470:17)
+
+  console.error
+    Warning: You provided a `checked` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultChecked`. Otherwise, set either `onChange` or `readOnly`.
+        at input
+        at div
+        at div
+        at div
+        at App (/home/chris/Documents/Uni/Project/Runtime-Terror---Snake-Game-Viewer/src/App.tsx:475:27)
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:67:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:43:5)
+      at checkControlledValueProps (node_modules/react-dom/cjs/react-dom.development.js:1327:7)
+      at initWrapperState (node_modules/react-dom/cjs/react-dom.development.js:1495:5)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom.development.js:9099:7)
+      at finalizeInitialChildren (node_modules/react-dom/cjs/react-dom.development.js:10201:3)
+      at completeWork (node_modules/react-dom/cjs/react-dom.development.js:19470:17)
+
+  console.error
+    Warning: You provided a `checked` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultChecked`. Otherwise, set either `onChange` or `readOnly`.
+        at input
+        at div
+        at div
+        at div
+        at App (/home/chris/Documents/Uni/Project/Runtime-Terror---Snake-Game-Viewer/src/App.tsx:475:27)
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:67:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:43:5)
+      at checkControlledValueProps (node_modules/react-dom/cjs/react-dom.development.js:1327:7)
+      at initWrapperState (node_modules/react-dom/cjs/react-dom.development.js:1495:5)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom.development.js:9099:7)
+      at finalizeInitialChildren (node_modules/react-dom/cjs/react-dom.development.js:10201:3)
+      at completeWork (node_modules/react-dom/cjs/react-dom.development.js:19470:17)
+
+  console.log
+    Caching game: 1
+
+      at src/App.tsx:340:11
+
+  console.log
+    Cached 0 gamestates
+
+      at src/App.tsx:345:13
+
+
+> snakeboard@0.1.0 test
+> jest
+

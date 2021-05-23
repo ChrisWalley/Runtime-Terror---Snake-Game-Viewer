@@ -65,7 +65,7 @@ test('Test header links', () => {
   act(() => {
     render(<App />);
   });
-  
+
   const linkElementWatch = screen.getByText(/Watch/i);
   expect(linkElementWatch).toBeInTheDocument();
 
