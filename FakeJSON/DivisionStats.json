@@ -1,0 +1,21 @@
+[
+  {
+    "id": 0,
+    "division": "Division 0",
+    "avg_deaths": "35",
+    "avg_score": "50",
+    "avg_time_to_apple":"43"
+  },{
+    "id": 1,
+    "division": "Division 1",
+    "avg_deaths": "47",
+    "avg_score": "33",
+    "avg_time_to_apple":"64"
+  },{
+    "id": 2,
+    "division": "Division 2",
+    "avg_deaths": "72",
+    "avg_score": "20",
+    "avg_time_to_apple":"80"
+  }
+]
