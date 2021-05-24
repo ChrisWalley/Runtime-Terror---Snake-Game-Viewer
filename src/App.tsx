@@ -5,7 +5,9 @@ import Select from 'react-select';
 
 
 const PlayerURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Player.json'
+const PlayerStatsURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Stats.json'
 const DivisionURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Division.json'
+const DivisionStatsURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/DivisionStats.json'
 
 const ENDPOINT = "http://walleyco.de:3001";
 const CONFIG_PATH = 'games/config';
@@ -79,6 +81,44 @@ var gameColours =
   snake3: 'rgb(0,205,108)'
 };
 
+var gameCurrStatsUser =
+{
+  id: -1,
+  username: "",
+  max_length: "",
+  avg_length: "",
+  no_of_kills:"",
+  score: ""
+};
+
+var gameCurrStatsDivision =
+{
+  id: -1,
+  division: "",
+  avg_deaths: "",
+  avg_score: "",
+  avg_time_to_apple:""
+};
+
+var gameCurrStatsUserEmpty =
+{
+  id: -1,
+  username: "",
+  max_length: "",
+  avg_length: "",
+  no_of_kills:"",
+  score: ""
+};
+
+var gameCurrStatsDivisionEmpty =
+{
+  id: -1,
+  division: "",
+  avg_deaths: "",
+  avg_score: "",
+  avg_time_to_apple:""
+};
+
 var appleCol =
 {
   r:0,
@@ -108,14 +148,15 @@ var gameServerUp = false;
 function App()  {
 
   const viewerRef = React.useRef<HTMLCanvasElement>(null);
+  const statsRef = React.useRef<HTMLCanvasElement>(null);
   const serverDownRef = React.useRef<HTMLCanvasElement>(null);
   const serverDownRef2 = React.useRef<HTMLCanvasElement>(null);
-  const statsRef = React.useRef<HTMLCanvasElement>(null);
   const [viewerContext, setViewerContext] = React.useState<CanvasRenderingContext2D | null>(null);
+  const [statsContext, setStatsContext] = React.useState<CanvasRenderingContext2D | null>(null);
   const [serverDownContext, setServerDownContext] = React.useState<CanvasRenderingContext2D | null>(null);
   const [serverDownContext2, setServerDownContext2] = React.useState<CanvasRenderingContext2D | null>(null);
   const [cachedGamesList, setCachedGamesList] = useState("");
-  const [gameRef, setGameRef] = useState(-1);
+  const [gameRef, setGameRef] = useState(0);
   const [paused, setPaused] = useState(gamePaused);
   const [rewind, setRewind] = useState(gameRewind);
   const [ffwd, setFfwd] = useState(gameFfwd);
@@ -124,6 +165,14 @@ function App()  {
   const [index, setIndex] = useState(0);
   const [serverUp, setServerUp] = useState(gameServerUp);
   const [selectedDivision, setSelectedDivision] = useState("Division 0");
+  const [isGameCached, setIsGameCached] = useState(false);
+
+  const [players, setPlayers] = useState([])
+  const [playersStats, setPlayersStats] = useState({})
+  const [divisionStats, setDivisionStats] = useState({})
+  const [currentStatsUser, setCurrentStatsUser] = useState(gameCurrStatsUser)
+  const [currentStatsDivision, setCurrentStatsDivision] = useState(gameCurrStatsDivision)
+  const [divisions, setDivisions] = useState([])
 
   function drawGameboard() {
     if(viewerContext && gameServerUp)
@@ -349,6 +398,59 @@ function App()  {
     requestAnimationFrame(drawServerDown);
   }
 
+  function drawStats() {
+    if(gameServerUp)
+    {
+      if(statsContext)
+      {
+
+        statsContext.fillStyle = gameColours.background;     //Clears area
+        statsContext.fillRect(0,0, canvasWidth, canvasHeight);
+        statsContext.fillRect(startX,startY + config.game_width*blockSize + 20, config.game_height*blockSize, 10);
+
+        statsContext.strokeStyle = gameColours.border;          //Draws square around viewer and progress bar
+        statsContext.strokeRect(startX,startY, config.game_width*blockSize, config.game_height*blockSize);
+
+        statsContext.font = "30px Verdana";
+
+        statsContext.fillStyle = gameColours.obstacles;
+        if(gameCurrStatsUser && gameCurrStatsUser.id!=(-1))
+        {
+          statsContext.fillText(gameCurrStatsUser.username,startX+ ((config.game_width)*blockSize-(statsContext.measureText(gameCurrStatsUser.username).width))/2,startY+5*blockSize);
+
+          statsContext.font = "20px Verdana";
+
+          statsContext.fillText("Maximum length:",startX+ 5*blockSize,startY+15*blockSize);
+          statsContext.fillText("Average score:",startX+ 5*blockSize,startY+20*blockSize);
+          statsContext.fillText("Total kills:",startX+ 5*blockSize,startY+25*blockSize);
+
+          statsContext.fillText(gameCurrStatsUser.max_length,startX+ 40*blockSize,startY+15*blockSize);
+          statsContext.fillText(gameCurrStatsUser.avg_length,startX+ 40*blockSize,startY+20*blockSize);
+          statsContext.fillText(gameCurrStatsUser.no_of_kills,startX+ 40*blockSize,startY+25*blockSize);
+        }
+        else if(gameCurrStatsDivision && gameCurrStatsDivision.id!=(-1))
+        {
+          statsContext.fillText(gameCurrStatsDivision.division,startX+ ((config.game_width)*blockSize-(statsContext.measureText(gameCurrStatsDivision.division).width))/2,startY+5*blockSize);
+
+          statsContext.font = "20px Verdana";
+
+          statsContext.fillText("Average score:",startX+ 5*blockSize,startY+15*blockSize);
+          statsContext.fillText("Average deaths:",startX+ 5*blockSize,startY+20*blockSize);
+          statsContext.fillText("Average time to apple:",startX+ 5*blockSize,startY+25*blockSize);
+
+          statsContext.fillText(gameCurrStatsDivision.avg_score,startX+ 40*blockSize,startY+15*blockSize);
+          statsContext.fillText(gameCurrStatsDivision.avg_deaths,startX+ 40*blockSize,startY+20*blockSize);
+          statsContext.fillText(gameCurrStatsDivision.avg_time_to_apple,startX+ 40*blockSize,startY+25*blockSize);
+        }
+
+
+
+      }
+    }
+
+    requestAnimationFrame(drawStats);
+  }
+
   function getConfig() {
 
     config =
@@ -383,10 +485,12 @@ function App()  {
   async function cacheGame(gameRef, game){
     window.sessionStorage.clear();
     window.sessionStorage.setItem("cachedGame",JSON.stringify(game));              //Crashes after storing too many games, so set to only store last 1
-    //cachedGames.push(gameRef);
-      // @ts-ignore: Object is possibly 'null'.
-      let tempGameStateArr = {};
-      tempGameStateArr = JSON.parse(sessionStorage.getItem("cachedGame")!);
+    let tempGameStateArr = {};
+    tempGameStateArr = JSON.parse(sessionStorage.getItem("cachedGame")!);
+    if(tempGameStateArr!=null)
+    {
+      setIsGameCached(true);
+    }
   }
 
   function saveGameData(gameReference, saveGameState){
@@ -428,7 +532,9 @@ function App()  {
     {
       if(realtimeGamestate>config.gameFrames)
       {
-        realtimeGamestate = 0;
+        setGameRef(prevState=> (prevState+1));
+        cacheGame(gameRef, gameStateArr);
+        resetGamestate();
       }
 
       if(appleX === lastAppleX && appleY === lastAppleY)
@@ -462,15 +568,22 @@ function App()  {
         obstacle0: "1 16,32 16,36",
         obstacle1: "2 47,26 43,26",
         obstacle2: "0 30,21 26,21",
-        snake0: "0 alive 26 2 9,5 3,5 3,9 17,9",
-        snake1: "1 alive 15 2 48,16 45,16 45,10",
-        snake2: "2 alive 32 2 33,38 19,38",
-        snake3: "3 alive 7 2 1,47 6,47 6,30 8,30",
+        snake0: "",
+        snake1: "",
+        snake2: "",
+        snake3: "",
         snake0Score: 0,
         snake1Score: 0,
         snake2Score: 0,
         snake3Score: 0
       };
+
+      /*
+      snake0: "0 alive 26 2 9,5 3,5 3,9 17,9",
+      snake1: "1 alive 15 2 48,16 45,16 45,10",
+      snake2: "2 alive 32 2 33,38 19,38",
+      snake3: "3 alive 7 2 1,47 6,47 6,30 8,30",
+      */
     }
     if(gameRewind)
     {
@@ -539,10 +652,21 @@ function App()  {
 
       if (viewerContext)
       {
-        drawGameboard();
-      }
-}, [viewerContext]);
+        drawGameboard();}}, [viewerContext]);
 
+  useEffect(() => {
+
+    if (statsRef.current) {
+      const statsRenderContext = statsRef.current.getContext('2d');
+      if (statsRenderContext) {
+        setStatsContext(statsRenderContext);
+      }
+    }
+
+    if (statsContext)
+    {
+      drawStats();
+    }}, [statsContext]);
 
   useEffect(() => {
 
@@ -556,9 +680,7 @@ function App()  {
       if (serverDownContext)
       {
         drawServerDown();
-      }
-}, [serverDownContext]);
-
+      }}, [serverDownContext]);
 
   useEffect(() => {
 
@@ -572,9 +694,7 @@ function App()  {
       if (serverDownContext2)
       {
         drawServerDown();
-      }
-}, [serverDownContext2]);
-
+      }}, [serverDownContext2]);
 
   useEffect(() => {
     initVars();
@@ -583,161 +703,213 @@ function App()  {
     updateGameStateIntervalRef = setInterval(updateGameState, config.game_speed);
     }, []);
 
-    const [players, setPlayers] = useState([])
-    const [divisions, setDivisions] = useState([])
+  useEffect(() => {
+    let isMounted = true;               // note mutable flag
+    getDivisionData().then(response => {
+      if (isMounted) setDivisions(response.data);    // add conditional check
+    })
 
+    getPlayerData().then(response => {
+      if (isMounted) setPlayers(response.data);    // add conditional check
+    })
 
-    useEffect(() => {
-      let isMounted = true;               // note mutable flag
-      getDivisionData().then(response => {
-        if (isMounted) setDivisions(response.data);    // add conditional check
-      })
-      return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
-    }, []);
+    getPlayerStatsData().then(response => {
+      if (isMounted)
+      {
+        var playerStatsDict = {};
 
-    useEffect(() => {
-      let isMounted = true;               // note mutable flag
-      getPlayerData().then(response => {
-        if (isMounted) setPlayers(response.data);    // add conditional check
-      })
-      return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
-    }, []);
-
-    useEffect(() => {
-      gamePaused = paused;
-      gameFfwd = ffwd;
-      gameRewind = rewind;
-      gameRealtime = realtime;
-      gameDrawCells = drawCells;}, [paused, ffwd, rewind, realtime, drawCells]);
-
-      useEffect(() => {
-        gameServerUp = serverUp;
-        if(serverUp)
-        {
-          if(viewerRef.current)
-          {
-            const renderCtx = viewerRef.current.getContext('2d');
-
-            if (renderCtx) {
-              setViewerContext(renderCtx);
-            }
-          }
-        }
-        else{
-          if (serverDownRef.current) {
-            const serverDownRenderCtx = serverDownRef.current.getContext('2d');
-            if (serverDownRenderCtx) {
-              setServerDownContext(serverDownRenderCtx);
-            }
-          }
-          if (serverDownRef2.current) {
-            const serverDownRenderCtx2 = serverDownRef2.current.getContext('2d');
-            if (serverDownRenderCtx2) {
-              setServerDownContext2(serverDownRenderCtx2);
-            }
-          }
-
+        for (var i = 0, player; i < response.data.length; i++) {
+           player = response.data[i];
+           playerStatsDict[player.username] = player;
         }
 
-      }, [paused, ffwd, rewind, realtime, drawCells, serverUp]);
+        setPlayersStats(playerStatsDict);
+      }     // add conditional check
+    })
 
-    function handleUsernameClick(e) {
-    setIndex(1);
-    }
+    getDivisionStatsData().then(response => {
+      if (isMounted)
+      {
+        var divisionStatsDict = {};
 
-    function handleScoreClick(e) {
-    setIndex(0);
-    }
+        for (var i = 0, division; i < response.data.length; i++) {
+           division = response.data[i];
+           divisionStatsDict[division.division] = division;
+        }
 
-    function handleDivisionClick(e) {
-    setIndex(0);
-    setSelectedDivision("Division "+e);
-    }
+        setDivisionStats(divisionStatsDict);
+      }     // add conditional check
+    })
 
-    function initVars(){
-      gamePaused = paused;
-      gameFfwd = ffwd;
-      gameRewind = rewind;
-      gameRealtime = realtime;
-      gameDrawCells = drawCells;
+    return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
+  }, []);
+
+  useEffect(() => {
+    gamePaused = paused;
+    gameFfwd = ffwd;
+    gameRewind = rewind;
+    gameRealtime = realtime;
+    gameDrawCells = drawCells;
+    gameCurrStatsUser = currentStatsUser;
+    gameCurrStatsDivision = currentStatsDivision;}, [paused, ffwd, rewind, realtime, drawCells,currentStatsUser,currentStatsDivision]);
+
+  useEffect(() => {
       gameServerUp = serverUp;
-    }
-
-    const getPlayerData = async () => {
-        const response = await axios.get(PlayerURL)
-        return response;
-    }
-
-    const getDivisionData = async () => {
-        const response = await axios.get(DivisionURL)
-        return response;
-    }
-
-    const renderTableHeader = () => {
-        let headerElement = ['score', 'name','division']
-        return headerElement.map((key, index) => {
-            return <th key={index}>{key.toUpperCase()}</th>
-        })
-    }
-
-    const renderTableBody = () => {
       if(serverUp)
       {
-        return players && players.map(({ id, username, score, division }) => {
-            return (
-                <tr key={id}>
-                    <td>{score}</td>
-                    <td className='opration'>
-                        <a className='button' onClick={() =>handleUsernameClick(username)}>{username}</a>
-                    </td>
-                    <td className='opration'>
-                        <a className='button' onClick={() =>handleDivisionClick(division)}>{division}</a>
-                    </td>
-                </tr>
-            )
-        })
+        if(viewerRef.current)
+        {
+          const renderCtx = viewerRef.current.getContext('2d');
+
+          if (renderCtx) {
+            setViewerContext(renderCtx);
+          }
+        }
+
+        if(statsRef.current)
+        {
+          const statsRenderContext = statsRef.current.getContext('2d');
+
+          if (statsRenderContext) {
+            setStatsContext(statsRenderContext);
+          }
+        }
       }
-      else
-      {
-        return (
-            <tr key='0'>
-                <td>{"Connecting..."}</td>
-                <td>{"Connecting..."}</td>
-                <td>{"Connecting..."}</td>
-            </tr>
-        )
+      else{
+        if (serverDownRef.current) {
+          const serverDownRenderCtx = serverDownRef.current.getContext('2d');
+          if (serverDownRenderCtx) {
+            setServerDownContext(serverDownRenderCtx);
+          }
+        }
+        if (serverDownRef2.current) {
+          const serverDownRenderCtx2 = serverDownRef2.current.getContext('2d');
+          if (serverDownRenderCtx2) {
+            setServerDownContext2(serverDownRenderCtx2);
+          }
+        }
+
       }
+
+    }, [serverUp]);
+
+  function handleUsernameClick(e) {
+    setIndex(1);
+    setCurrentStatsDivision(gameCurrStatsDivisionEmpty);
+    setCurrentStatsUser(playersStats[e]);
+  }
+
+  function handleDivisionStatsClick(e) {
+    setIndex(1);
+    setCurrentStatsUser(gameCurrStatsUserEmpty);
+    setCurrentStatsDivision(divisionStats[selectedDivision]);
+  }
+
+  function handleDivisionClick(e) {
+  setIndex(0);
+  setSelectedDivision("Division "+e);
+  }
+
+  function initVars(){
+    gamePaused = paused;
+    gameFfwd = ffwd;
+    gameRewind = rewind;
+    gameRealtime = realtime;
+    gameDrawCells = drawCells;
+    gameServerUp = serverUp;
+  }
+
+  const getPlayerData = async () => {
+      const response = await axios.get(PlayerURL)
+      return response;
+  }
+
+  const getPlayerStatsData = async () => {
+      const response = await axios.get(PlayerStatsURL)
+      return response;
+  }
+
+  const getDivisionStatsData = async () => {
+      const response = await axios.get(DivisionStatsURL)
+      return response;
+  }
+
+  const getDivisionData = async () => {
+      const response = await axios.get(DivisionURL)
+      return response;
+  }
+
+  const renderTableHeader = () => {
+      let headerElement = ['score', 'name','division']
+      return headerElement.map((key, index) => {
+          return <th key={index}>{key.toUpperCase()}</th>
+      })
+  }
+
+  const renderTableBody = () => {
+    if(serverUp)
+    {
+      return players && players.map(({ id, username, score, division }) => {
+          return (
+              <tr key={id}>
+                  <td>{score}</td>
+                  <td className='opration'>
+                      <a className='button' onClick={() =>handleUsernameClick(username)}>{username}</a>
+                  </td>
+                  <td className='opration'>
+                      <a className='button' onClick={() =>handleDivisionClick(division)}>{division}</a>
+                  </td>
+              </tr>
+          )
+      })
     }
+    else
+    {
+      return (
+          <tr key='0'>
+              <td>{"Connecting..."}</td>
+              <td>{"Connecting..."}</td>
+              <td>{"Connecting..."}</td>
+          </tr>
+      )
+    }
+  }
 
-    const handleSelect = (selectedIndex, e) => {
-      setIndex(selectedIndex);
-    };
+  const handleSelect = (selectedIndex, e) => {
+    setIndex(selectedIndex);
+  };
 
-    const renderDivisionSelect = () => {
-      if(serverUp)
-      {
+
+
+  function logChange(event){
+         setSelectedDivision(event.target.value);
+     };
+
+  const renderDivisionSelect = () => {
+    if(serverUp)
+    {
+      return (
+        <div>
+          {['division'].map(key => (
+            <select key={key} value={selectedDivision} onChange={logChange}>
+              {divisions.map(({ [key]: value }) => <option key={value}>{value}</option>)}
+            </select>
+          ))}
+        </div>
+      )
+    }
+      else{
         return (
           <div>
             {['division'].map(key => (
-              <select key={key} value={selectedDivision}>
-                {divisions.map(({ [key]: value }) => <option key={value}>{value}</option>)}
+              <select key={key}>
+                {<option key={0}>{"Connecting..."}</option>}
               </select>
             ))}
           </div>
         )
       }
-        else{
-          return (
-            <div>
-              {['division'].map(key => (
-                <select key={key}>
-                  {<option key={0}>{"Connecting..."}</option>}
-                </select>
-              ))}
-            </div>
-          )
-        }
-    }
+  }
 
   return (
     <>
@@ -761,7 +933,7 @@ function App()  {
           <h2>Division</h2>
             {renderDivisionSelect()}
           <div>
-            <button onClick={()=>handleDivisionClick(1)}>
+            <button onClick={()=>handleDivisionStatsClick(1)}>
               Stats
             </button>
           </div>
@@ -769,7 +941,7 @@ function App()  {
 
         <div className="column middle">
         <div className="custom_carousel_main">
-                <Carousel activeIndex={index} onSelect={handleSelect} controls={true} indicators={false} interval={null} wrap={false}>
+                <Carousel activeIndex={index} onSelect={handleSelect} controls={false} indicators={false} interval={null} wrap={false}>
                   <Carousel.Item>
                     <div>
                          <h2 className="centered" style={{
@@ -839,12 +1011,13 @@ function App()  {
             <button onClick={() => {setPaused(false);setRewind(false);setFfwd(true); setRealtime(false);}}><i className="material-icons">fast_forward</i></button>
             <button style={{ visibility: (realtime ||  (index!==0)) ? "hidden" : "visible" }} onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(true);currentGamestate = realtimeGamestate}}>{<i className="material-icons">skip_next</i>}</button>
            </div>
-           <div style={{ visibility: (index===0 && serverUp) ? "visible" : "hidden" }} id="viewerChangeControls" className="buttonscenteredSingle">
-             <button onClick={() => {setPaused(false);setRewind(true);setFfwd(false); setRealtime(false);}}><i className="material-icons">settings_backup_restore</i></button>
+           <div style={{ visibility: (index===0 && serverUp) ? "visible" : "hidden" }} id="viewerLookControls" className="buttonscenteredSingle">
+            <button onClick={() => {setDrawCells(prevState => !prevState)}}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
           </div>
-          <div style={{ visibility: (index===0 && serverUp) ? "visible" : "hidden" }} id="viewerLookControls" className="buttonscenteredSingle">
-           <button onClick={() => {setDrawCells(prevState => !prevState)}}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
-         </div>
+           <div style={{ visibility: (index===0 && serverUp && isGameCached) ? "visible" : "collapse" }} id="viewerChangeControls" className="buttonscenteredSingle">
+             <button onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(false);currentGamestate = startedViewingGamestate;}}><i className="material-icons">settings_backup_restore</i></button>
+          </div>
+
          </div>
         <div className="column right" style={{float: 'right'}}>
           <h1 id='title'>Leaderboard</h1>
@@ -857,7 +1030,7 @@ function App()  {
               </tbody>
           </table>
           <div style={{ visibility: "collapse"}} id="hiddenButtons" className="buttons">
-          <button onClick={() => {handleUsernameClick("1"); handleScoreClick("1");}}>
+          <button onClick={() => {handleUsernameClick("1"); handleDivisionClick("1");}}>
           {<i>triggerClickFunctions</i>}
           </button>
           </div>
