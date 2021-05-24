@@ -23,6 +23,8 @@ const blockSize = 10;
 const startX = 10;
 const startY = 10;
 
+var drawSnakeImage = true;
+
 var loadingBarSnake =
 {
   x:0,
@@ -41,13 +43,6 @@ var appleHealth = 5;
 var currentGamestate =0;
 var realtimeGamestate = 0;
 
-var lastGameRef = -1;
-var lastGameSnake0Score = -1;
-var lastGameSnake1Score = -1;
-var lastGameSnake2Score = -1;
-var lastGameSnake3Score = -1;
-
-var addedClickEvent = false;
 
 var rewindMulti = 2;
 var ffwdMulti = 2;
@@ -55,11 +50,9 @@ var ffwdMulti = 2;
 let gameStateArr = {};
 
 var startedViewingGamestate = 0;
-var waitingForFirstGamestate = true;
 
 var currDivision = -1;
 var nGames = 0;
-var updateGameStateIntervalRef;
 
 var config;
 
@@ -179,13 +172,6 @@ function App()  {
   useEffect(() => {
 
       if (viewerRef.current) {
-        if(!addedClickEvent)
-                {
-                  viewerRef.current.addEventListener('click', clickEventListener, false);
-                  viewerX = viewerRef.current.offsetLeft + viewerRef.current.clientLeft;
-                  viewerY = viewerRef.current.offsetTop + viewerRef.current.clientTop;
-                  addedClickEvent = true;
-                }
         const renderCtx = viewerRef.current.getContext('2d');
 
         if (renderCtx) {
@@ -243,7 +229,7 @@ function App()  {
     initVars();
     getConfig();
     refreshLeaderboardAndDivisions();
-    updateGameStateIntervalRef = setInterval(updateGameState, config.game_speed);
+    setInterval(updateGameState, config.game_speed);
     }, []);
 
   useEffect(() => {
@@ -453,28 +439,10 @@ function App()  {
           for (i = 0; i < snakeRects.length; i++) {
             viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
           }
-          viewerContext.drawImage(imageObj1,progBar.x+(currentGamestate/config.gameFrames)*(config.game_height*blockSize)-3,progBar.y-2);
-      }
-      else if (lastGameRef>=0){
-        var col1X = 100;
-        var col2X = 350;
-        var colStartY = 50;
-        viewerContext.fillStyle = gameColours.border;
-        viewerContext.font = "30px Arial";
-        viewerContext.fillText("Game "+lastGameRef+":", (col1X+col2X)/2-50, colStartY);
-        viewerContext.fillText("Player:", col1X, colStartY+100);
-        viewerContext.fillText("Score:", col2X, colStartY+100);
-        viewerContext.fillText("Snake 1", col1X, colStartY+200);
-        viewerContext.fillText(""+lastGameSnake0Score, col2X, colStartY+200);
-
-        viewerContext.fillText("Snake 2", col1X, colStartY+250);
-        viewerContext.fillText(""+lastGameSnake1Score, col2X, colStartY+250);
-
-        viewerContext.fillText("Snake 3", col1X, colStartY+300);
-        viewerContext.fillText(""+lastGameSnake2Score, col2X, colStartY+300);
-
-        viewerContext.fillText("Snake 4", col1X, colStartY+350);
-        viewerContext.fillText(""+lastGameSnake3Score, col2X, colStartY+350);
+          if(drawSnakeImage)
+          {
+            viewerContext.drawImage(imageObj1,progBar.x+(currentGamestate/config.gameFrames)*(config.game_height*blockSize)-3,progBar.y-2);
+          }
       }
     }
 
@@ -560,6 +528,35 @@ function App()  {
 
 
     requestAnimationFrame(drawServerDown);
+  }
+
+  function addFakeUserForStats(){
+    var fakseUser =
+    {
+      id: 1,
+      username: "",
+      max_length: "",
+      avg_length: "",
+      no_of_kills:"",
+      score: ""
+    };
+
+    setCurrentStatsUser(fakseUser);
+    setCurrentStatsDivision(gameCurrStatsDivisionEmpty);
+  }
+
+  function addFakeDivisionForStats(){
+    var fakeDiv =
+    {
+      id: 1,
+      division: "",
+      avg_deaths: "",
+      avg_score: "",
+      avg_time_to_apple:""
+    };
+
+    setCurrentStatsUser(gameCurrStatsUserEmpty);
+    setCurrentStatsDivision(fakeDiv);
   }
 
   function drawStats() {
@@ -657,15 +654,6 @@ function App()  {
     }
   }
 
-  function saveGameData(gameReference, saveGameState){
-    lastGameRef = gameReference;
-    lastGameSnake0Score = saveGameState.snake0Score;
-    lastGameSnake1Score = saveGameState.snake1Score;
-    lastGameSnake2Score = saveGameState.snake2Score;
-    lastGameSnake3Score = saveGameState.snake3Score;
-    return true;
-  }
-
   function resetGamestate(){
     gameState =
     {
@@ -689,7 +677,6 @@ function App()  {
     appleY = 0;
     lastAppleX = appleX;
     lastAppleY = appleY;
-    waitingForFirstGamestate = true;
     gameStateArr = {};
     realtimeGamestate = 0;
     currentGamestate = 0;
@@ -795,26 +782,6 @@ function App()  {
       currentGamestate++;
     }
     gameState = gameStateArr[currentGamestate];
-  }
-
-  function clickEventListener(event) {
-    /*
-    console.log("clicked "+event.pageX);
-    console.log("clicked "+event.pageY);
-    */
-    var x = event.pageX - viewerX;
-    var y = event.pageY - viewerY;
-
-    if (y > progBar.y && y < progBar.y + progBar.height
-               && x > progBar.x && x < progBar.x + progBar.width) {
-               setRealtime(false);
-               var clickedGameState = (x- startX)*config.game_width/blockSize;
-               if(clickedGameState >= startedViewingGamestate)
-               {
-                 currentGamestate = clickedGameState;
-               }
-               console.log('clicked progress  bar' +clickedGameState);
-           }
   }
 
   function handleUsernameClick(e) {
@@ -1065,8 +1032,17 @@ function App()  {
           <button onClick={() => {resetGamestate(); cacheGame(1,1);}}>
             {<i>triggerMiscFunctions</i>}
           </button>
-          <button onClick={() => {drawGameboard();}}>
+          <button onClick={() => {drawSnakeImage = false; updateGameState();drawGameboard(); loadingBarSnake.count = 8; drawServerDown();}}>
           {<i>triggerDrawGameboard</i>}
+          </button>
+          <button onClick={() => {addFakeUserForStats(); drawStats();addFakeDivisionForStats();drawStats();}}>
+          {<i>triggerDrawStats</i>}
+          </button>
+          <button onClick={() => {handleUsernameClick('ChrisWalley'); handleDivisionClick('Division 0')}}>
+          {<i>triggerStatsUser</i>}
+          </button>
+          <button onClick={() => {handleDivisionStatsClick(1);}}>
+          {<i>triggerStatsDivisionFromSelect</i>}
           </button>
         </div>
       </div>

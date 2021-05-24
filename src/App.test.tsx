@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { act } from 'react-dom/test-utils'
 import {mount, shallow, configure} from 'enzyme';
 import Adapter from '@wojtekmaj/enzyme-adapter-react-17';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { render, fireEvent, screen, queryByAttribute } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import App from './App';
 
@@ -49,6 +49,28 @@ test('Test buttons', () => {
   fireEvent.click(linkElementBtntriggerLogicUpdate);
 });
 
+test('Test leaderboard interaction', () => {
+  act(() => {
+    render(<App />);
+  });
+
+  const linkElementTerror = screen.getByText(/Terror/i);
+  expect(linkElementTerror).toBeInTheDocument();
+  fireEvent.click(linkElementTerror);
+
+  const linkElementBtntriggerDrawStats = screen.getByText(/triggerDrawStats/i);
+  fireEvent.click(linkElementBtntriggerDrawStats);
+
+  const linkElementBtntriggerStatsUser = screen.getByText(/triggerStatsUser/i);
+  fireEvent.click(linkElementBtntriggerStatsUser);
+
+
+  const linkElementBtntriggerStatsDivisionButton = screen.getByText(/triggerStatsDivisionFromSelect/i);
+  fireEvent.click(linkElementBtntriggerStatsDivisionButton);
+
+
+});
+
 test('Test header links', () => {
   act(() => {
     render(<App />);
@@ -92,4 +114,16 @@ test('Test other functions', () => {
 
   const linkElementBtntriggerDrawGameboard = screen.getByText(/triggerDrawGameboard/i);
   fireEvent.click(linkElementBtntriggerDrawGameboard);
+
+  const linkElementBtntriggerDrawStats = screen.getByText(/triggerDrawStats/i);
+  fireEvent.click(linkElementBtntriggerDrawStats);
+
+  const linkElementTerror = screen.getByText(/Terror/i);
+  expect(linkElementTerror).toBeInTheDocument();
+  fireEvent.click(linkElementTerror);
+
+  fireEvent.click(linkElementBtntriggerMiscFunctions);
+  fireEvent.click(linkElementBtntriggerDrawGameboard);
+  fireEvent.click(linkElementBtntriggerDrawStats);
+
 });
