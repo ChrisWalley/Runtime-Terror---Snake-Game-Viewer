@@ -6,6 +6,8 @@ Branch main:
 
 [![Coverage Status](https://coveralls.io/repos/github/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/badge.svg?branch=main)](https://coveralls.io/github/ChrisWalley/Runtime-Terror---Snake-Game-Viewer?branch=main)
 
+[![Coverage Status](https://coveralls.io/repos/github/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/badge.png?branch=main)](https://coveralls.io/github/ChrisWalley/Runtime-Terror---Snake-Game-Viewer?branch=main)
+
 
 View it here: http://walleyco.de:3000/
 
