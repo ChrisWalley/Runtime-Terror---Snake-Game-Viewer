@@ -144,6 +144,7 @@ var gameRewind = false;
 var gameRealtime = true;
 var gameDrawCells = true;
 var gameServerUp = false;
+var gameSelectedDivision = "Division 0";
 
 function App()  {
 
@@ -164,7 +165,7 @@ function App()  {
   const [drawCells, setDrawCells] = useState(gameDrawCells);
   const [index, setIndex] = useState(0);
   const [serverUp, setServerUp] = useState(gameServerUp);
-  const [selectedDivision, setSelectedDivision] = useState("Division 0");
+  const [selectedDivision, setSelectedDivision] = useState(gameSelectedDivision);
   const [isGameCached, setIsGameCached] = useState(false);
 
   const [players, setPlayers] = useState([])
@@ -173,6 +174,169 @@ function App()  {
   const [currentStatsUser, setCurrentStatsUser] = useState(gameCurrStatsUser)
   const [currentStatsDivision, setCurrentStatsDivision] = useState(gameCurrStatsDivision)
   const [divisions, setDivisions] = useState([])
+
+
+  useEffect(() => {
+
+      if (viewerRef.current) {
+        if(!addedClickEvent)
+                {
+                  viewerRef.current.addEventListener('click', clickEventListener, false);
+                  viewerX = viewerRef.current.offsetLeft + viewerRef.current.clientLeft;
+                  viewerY = viewerRef.current.offsetTop + viewerRef.current.clientTop;
+                  addedClickEvent = true;
+                }
+        const renderCtx = viewerRef.current.getContext('2d');
+
+        if (renderCtx) {
+          setViewerContext(renderCtx);
+        }
+      }
+
+      if (viewerContext)
+      {
+        drawGameboard();}}, [viewerContext]);
+
+  useEffect(() => {
+
+    if (statsRef.current) {
+      const statsRenderContext = statsRef.current.getContext('2d');
+      if (statsRenderContext) {
+        setStatsContext(statsRenderContext);
+      }
+    }
+
+    if (statsContext)
+    {
+      drawStats();
+    }}, [statsContext]);
+
+  useEffect(() => {
+
+      if (serverDownRef.current) {
+        const serverDownRenderCtx = serverDownRef.current.getContext('2d');
+        if (serverDownRenderCtx) {
+          setServerDownContext(serverDownRenderCtx);
+        }
+      }
+
+      if (serverDownContext)
+      {
+        drawServerDown();
+      }}, [serverDownContext]);
+
+  useEffect(() => {
+
+      if (serverDownRef2.current) {
+        const serverDownRenderCtx2 = serverDownRef2.current.getContext('2d');
+        if (serverDownRenderCtx2) {
+          setServerDownContext(serverDownRenderCtx2);
+        }
+      }
+
+      if (serverDownContext2)
+      {
+        drawServerDown();
+      }}, [serverDownContext2]);
+
+  useEffect(() => {
+    initVars();
+    getConfig();
+    refreshLeaderboardAndDivisions();
+    updateGameStateIntervalRef = setInterval(updateGameState, config.game_speed);
+    }, []);
+
+  useEffect(() => {
+    let isMounted = true;               // note mutable flag
+    getDivisionData().then(response => {
+      if (isMounted) setDivisions(response.data);    // add conditional check
+    })
+
+    getPlayerData().then(response => {
+      if (isMounted) setPlayers(response.data);    // add conditional check
+    })
+
+    getPlayerStatsData().then(response => {
+      if (isMounted)
+      {
+        var playerStatsDict = {};
+
+        for (var i = 0, player; i < response.data.length; i++) {
+           player = response.data[i];
+           playerStatsDict[player.username] = player;
+        }
+
+        setPlayersStats(playerStatsDict);
+      }     // add conditional check
+    })
+
+    getDivisionStatsData().then(response => {
+      if (isMounted)
+      {
+        var divisionStatsDict = {};
+
+        for (var i = 0, division; i < response.data.length; i++) {
+           division = response.data[i];
+           divisionStatsDict[division.division] = division;
+        }
+
+        setDivisionStats(divisionStatsDict);
+      }     // add conditional check
+    })
+
+    return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
+  }, []);
+
+  useEffect(() => {
+    gamePaused = paused;
+    gameFfwd = ffwd;
+    gameRewind = rewind;
+    gameRealtime = realtime;
+    gameDrawCells = drawCells;
+    gameCurrStatsUser = currentStatsUser;
+    gameCurrStatsDivision = currentStatsDivision;
+    gameSelectedDivision = selectedDivision;}, [paused, ffwd, rewind, realtime, drawCells,currentStatsUser,currentStatsDivision,selectedDivision]);
+
+  useEffect(() => {
+      gameServerUp = serverUp;
+      if(serverUp)
+      {
+        if(viewerRef.current)
+        {
+          const renderCtx = viewerRef.current.getContext('2d');
+
+          if (renderCtx) {
+            setViewerContext(renderCtx);
+          }
+        }
+
+        if(statsRef.current)
+        {
+          const statsRenderContext = statsRef.current.getContext('2d');
+
+          if (statsRenderContext) {
+            setStatsContext(statsRenderContext);
+          }
+        }
+      }
+      else{
+        if (serverDownRef.current) {
+          const serverDownRenderCtx = serverDownRef.current.getContext('2d');
+          if (serverDownRenderCtx) {
+            setServerDownContext(serverDownRenderCtx);
+          }
+        }
+        if (serverDownRef2.current) {
+          const serverDownRenderCtx2 = serverDownRef2.current.getContext('2d');
+          if (serverDownRenderCtx2) {
+            setServerDownContext2(serverDownRenderCtx2);
+          }
+        }
+
+      }
+
+    }, [serverUp]);
+
 
   function drawGameboard() {
     if(viewerContext && gameServerUp)
@@ -520,6 +684,11 @@ function App()  {
       snake2Score: -1,
       snake3Score: -1
     };
+    appleHealth = 5;
+    appleX = 0;
+    appleY = 0;
+    lastAppleX = appleX;
+    lastAppleY = appleY;
     waitingForFirstGamestate = true;
     gameStateArr = {};
     realtimeGamestate = 0;
@@ -560,14 +729,29 @@ function App()  {
       appleCol.g = (appleHealth+5) * 21.5;
 
       gameColours.apple = 'rgb('+appleCol.r+','+appleCol.g+','+appleCol.b+')';
+      var obs0 = "0 30,21 26,21";
+      var obs1 = "1 47,26 43,26";
+      var obs2 = "2 16,32 16,36";
+
+      if(gameSelectedDivision === "Division 1")
+      {
+        obs0 = "0 28,34 28,31";
+        obs1 = "1 44,26 40,26";
+        obs2 = "2 10,32 6,32";
+      } else if (gameSelectedDivision === "Division 2")
+      {
+        obs0 = "0 21,34 24,34";
+        obs1 = "1 40,18 40,21";
+        obs2 = "2 30,37 27,37";
+      }
       gameStateArr[realtimeGamestate] =
       {
         ref: 0,
         state: 0,
         apple: appleX+" "+appleY,
-        obstacle0: "1 16,32 16,36",
-        obstacle1: "2 47,26 43,26",
-        obstacle2: "0 30,21 26,21",
+        obstacle0: obs0,
+        obstacle1: obs1,
+        obstacle2: obs2,
         snake0: "",
         snake1: "",
         snake2: "",
@@ -632,166 +816,6 @@ function App()  {
                console.log('clicked progress  bar' +clickedGameState);
            }
   }
-
-  useEffect(() => {
-
-      if (viewerRef.current) {
-        if(!addedClickEvent)
-                {
-                  viewerRef.current.addEventListener('click', clickEventListener, false);
-                  viewerX = viewerRef.current.offsetLeft + viewerRef.current.clientLeft;
-                  viewerY = viewerRef.current.offsetTop + viewerRef.current.clientTop;
-                  addedClickEvent = true;
-                }
-        const renderCtx = viewerRef.current.getContext('2d');
-
-        if (renderCtx) {
-          setViewerContext(renderCtx);
-        }
-      }
-
-      if (viewerContext)
-      {
-        drawGameboard();}}, [viewerContext]);
-
-  useEffect(() => {
-
-    if (statsRef.current) {
-      const statsRenderContext = statsRef.current.getContext('2d');
-      if (statsRenderContext) {
-        setStatsContext(statsRenderContext);
-      }
-    }
-
-    if (statsContext)
-    {
-      drawStats();
-    }}, [statsContext]);
-
-  useEffect(() => {
-
-      if (serverDownRef.current) {
-        const serverDownRenderCtx = serverDownRef.current.getContext('2d');
-        if (serverDownRenderCtx) {
-          setServerDownContext(serverDownRenderCtx);
-        }
-      }
-
-      if (serverDownContext)
-      {
-        drawServerDown();
-      }}, [serverDownContext]);
-
-  useEffect(() => {
-
-      if (serverDownRef2.current) {
-        const serverDownRenderCtx2 = serverDownRef2.current.getContext('2d');
-        if (serverDownRenderCtx2) {
-          setServerDownContext(serverDownRenderCtx2);
-        }
-      }
-
-      if (serverDownContext2)
-      {
-        drawServerDown();
-      }}, [serverDownContext2]);
-
-  useEffect(() => {
-    initVars();
-    getConfig();
-    refreshLeaderboardAndDivisions();
-    updateGameStateIntervalRef = setInterval(updateGameState, config.game_speed);
-    }, []);
-
-  useEffect(() => {
-    let isMounted = true;               // note mutable flag
-    getDivisionData().then(response => {
-      if (isMounted) setDivisions(response.data);    // add conditional check
-    })
-
-    getPlayerData().then(response => {
-      if (isMounted) setPlayers(response.data);    // add conditional check
-    })
-
-    getPlayerStatsData().then(response => {
-      if (isMounted)
-      {
-        var playerStatsDict = {};
-
-        for (var i = 0, player; i < response.data.length; i++) {
-           player = response.data[i];
-           playerStatsDict[player.username] = player;
-        }
-
-        setPlayersStats(playerStatsDict);
-      }     // add conditional check
-    })
-
-    getDivisionStatsData().then(response => {
-      if (isMounted)
-      {
-        var divisionStatsDict = {};
-
-        for (var i = 0, division; i < response.data.length; i++) {
-           division = response.data[i];
-           divisionStatsDict[division.division] = division;
-        }
-
-        setDivisionStats(divisionStatsDict);
-      }     // add conditional check
-    })
-
-    return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
-  }, []);
-
-  useEffect(() => {
-    gamePaused = paused;
-    gameFfwd = ffwd;
-    gameRewind = rewind;
-    gameRealtime = realtime;
-    gameDrawCells = drawCells;
-    gameCurrStatsUser = currentStatsUser;
-    gameCurrStatsDivision = currentStatsDivision;}, [paused, ffwd, rewind, realtime, drawCells,currentStatsUser,currentStatsDivision]);
-
-  useEffect(() => {
-      gameServerUp = serverUp;
-      if(serverUp)
-      {
-        if(viewerRef.current)
-        {
-          const renderCtx = viewerRef.current.getContext('2d');
-
-          if (renderCtx) {
-            setViewerContext(renderCtx);
-          }
-        }
-
-        if(statsRef.current)
-        {
-          const statsRenderContext = statsRef.current.getContext('2d');
-
-          if (statsRenderContext) {
-            setStatsContext(statsRenderContext);
-          }
-        }
-      }
-      else{
-        if (serverDownRef.current) {
-          const serverDownRenderCtx = serverDownRef.current.getContext('2d');
-          if (serverDownRenderCtx) {
-            setServerDownContext(serverDownRenderCtx);
-          }
-        }
-        if (serverDownRef2.current) {
-          const serverDownRenderCtx2 = serverDownRef2.current.getContext('2d');
-          if (serverDownRenderCtx2) {
-            setServerDownContext2(serverDownRenderCtx2);
-          }
-        }
-
-      }
-
-    }, [serverUp]);
 
   function handleUsernameClick(e) {
     setIndex(1);
@@ -879,10 +903,9 @@ function App()  {
     setIndex(selectedIndex);
   };
 
-
-
   function logChange(event){
          setSelectedDivision(event.target.value);
+         resetGamestate();
      };
 
   const renderDivisionSelect = () => {
