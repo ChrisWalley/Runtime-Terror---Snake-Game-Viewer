@@ -10,18 +10,6 @@ import App from './App';
 configure({ adapter: new Adapter() });
 const parseCoords = require('./parseCoords');
 
-test('Test header and leaderboard', () => {
-  act(() => {
-    render(<App />);
-  });
-
-  const linkElementHeader = screen.getByText(/Snake AI Competition/i);
-  expect(linkElementHeader).toBeInTheDocument();
-
-  const linkElementBtnFastRewind = screen.getByText(/fast_rewind/i);
-  fireEvent.click(linkElementBtnFastRewind);
-});
-
 test('Test buttons', () => {
   act(() => {
     render(<App />);

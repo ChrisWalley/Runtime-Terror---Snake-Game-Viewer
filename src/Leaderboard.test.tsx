@@ -5,13 +5,13 @@ import {mount, shallow, configure} from 'enzyme';
 import Adapter from '@wojtekmaj/enzyme-adapter-react-17';
 import { render, fireEvent, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
-import Leaderboard from './Leaderboard';
+import App from './App';
 
 configure({ adapter: new Adapter() });
 
 test('Leaderboard', () => {
   act(() => {
-    render(<Leaderboard />);
+    render(<App />);
   });
 
   const linkElementName = screen.getByText(/name/i);
@@ -27,6 +27,4 @@ test('Leaderboard', () => {
   const linkElementScore = screen.getByText(/score/i);
   expect(linkElementScore).toBeInTheDocument();
 
-  const linkElementDivision = screen.getByText(/division/i);
-  expect(linkElementDivision).toBeInTheDocument();
 });

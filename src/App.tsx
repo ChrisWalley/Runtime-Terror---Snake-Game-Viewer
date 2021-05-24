@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import Leaderboard from "./Leaderboard";
+import axios from 'axios';
+import Carousel from 'react-bootstrap/Carousel';
+import Select from 'react-select';
+
+
+const PlayerURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Player.json'
+const PlayerStatsURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Stats.json'
+const DivisionURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Division.json'
+const DivisionStatsURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/DivisionStats.json'
 
 const ENDPOINT = "http://walleyco.de:3001";
 const CONFIG_PATH = 'games/config';
@@ -7,13 +15,20 @@ const COUNT_PATH = 'games/count';
 const fetch = require("node-fetch");
 
 const parseCoords = require('./parseCoords');
-
+var whatWatch =0;
 const canvasHeight = 550;
 const canvasWidth = 520;
 
 const blockSize = 10;
 const startX = 10;
 const startY = 10;
+
+var loadingBarSnake =
+{
+  x:0,
+  y:27,
+  count:0
+}
 
 var appleX = 0;
 var appleY = 0;
@@ -23,8 +38,8 @@ var lastAppleY = 0;
 
 var appleHealth = 5;
 
-var currentGamestate = -1;
-var realtimeGamestate = -1;
+var currentGamestate =0;
+var realtimeGamestate = 0;
 
 var lastGameRef = -1;
 var lastGameSnake0Score = -1;
@@ -32,13 +47,6 @@ var lastGameSnake1Score = -1;
 var lastGameSnake2Score = -1;
 var lastGameSnake3Score = -1;
 
-var gameRealtime = true;
-var gamePaused = false;
-var gameFfwd = false;
-var gameRewind = false;
-var updatingByLogic = false;
-
-var gameDrawCells = true;
 var addedClickEvent = false;
 
 var rewindMulti = 2;
@@ -46,12 +54,9 @@ var ffwdMulti = 2;
 
 let gameStateArr = {};
 
-var lastFrameID= -1;
-
 var startedViewingGamestate = 0;
 var waitingForFirstGamestate = true;
 
-let divisions = [] as any[];
 var currDivision = -1;
 var nGames = 0;
 var updateGameStateIntervalRef;
@@ -76,6 +81,44 @@ var gameColours =
   snake3: 'rgb(0,205,108)'
 };
 
+var gameCurrStatsUser =
+{
+  id: -1,
+  username: "",
+  max_length: "",
+  avg_length: "",
+  no_of_kills:"",
+  score: ""
+};
+
+var gameCurrStatsDivision =
+{
+  id: -1,
+  division: "",
+  avg_deaths: "",
+  avg_score: "",
+  avg_time_to_apple:""
+};
+
+var gameCurrStatsUserEmpty =
+{
+  id: -1,
+  username: "",
+  max_length: "",
+  avg_length: "",
+  no_of_kills:"",
+  score: ""
+};
+
+var gameCurrStatsDivisionEmpty =
+{
+  id: -1,
+  division: "",
+  avg_deaths: "",
+  avg_score: "",
+  avg_time_to_apple:""
+};
+
 var appleCol =
 {
   r:0,
@@ -95,430 +138,502 @@ imageObj1.src = 'https://www.walleyco.de/snake.png'
 
 var viewerX = 0;
 var viewerY = 0;
+var gamePaused = false;
+var gameFfwd = false;
+var gameRewind = false;
+var gameRealtime = true;
+var gameDrawCells = true;
+var gameServerUp = false;
 
+function App()  {
 
-var viewerContext;
+  const viewerRef = React.useRef<HTMLCanvasElement>(null);
+  const statsRef = React.useRef<HTMLCanvasElement>(null);
+  const serverDownRef = React.useRef<HTMLCanvasElement>(null);
+  const serverDownRef2 = React.useRef<HTMLCanvasElement>(null);
+  const [viewerContext, setViewerContext] = React.useState<CanvasRenderingContext2D | null>(null);
+  const [statsContext, setStatsContext] = React.useState<CanvasRenderingContext2D | null>(null);
+  const [serverDownContext, setServerDownContext] = React.useState<CanvasRenderingContext2D | null>(null);
+  const [serverDownContext2, setServerDownContext2] = React.useState<CanvasRenderingContext2D | null>(null);
+  const [cachedGamesList, setCachedGamesList] = useState("");
+  const [gameRef, setGameRef] = useState(0);
+  const [paused, setPaused] = useState(gamePaused);
+  const [rewind, setRewind] = useState(gameRewind);
+  const [ffwd, setFfwd] = useState(gameFfwd);
+  const [realtime, setRealtime] = useState(gameRealtime);
+  const [drawCells, setDrawCells] = useState(gameDrawCells);
+  const [index, setIndex] = useState(0);
+  const [serverUp, setServerUp] = useState(gameServerUp);
+  const [selectedDivision, setSelectedDivision] = useState("Division 0");
+  const [isGameCached, setIsGameCached] = useState(false);
 
-function drawGameboard() {
-  if(true)
-  {
-    viewerContext.fillStyle = gameColours.background;     //Clears area
-    viewerContext.fillRect(0,0, canvasWidth, canvasHeight);
-    viewerContext.fillRect(startX,startY + config.game_width*blockSize + 20, config.game_height*blockSize, 10);
+  const [players, setPlayers] = useState([])
+  const [playersStats, setPlayersStats] = useState({})
+  const [divisionStats, setDivisionStats] = useState({})
+  const [currentStatsUser, setCurrentStatsUser] = useState(gameCurrStatsUser)
+  const [currentStatsDivision, setCurrentStatsDivision] = useState(gameCurrStatsDivision)
+  const [divisions, setDivisions] = useState([])
 
-    if(gameState!=null && gameState.state>=0)
+  function drawGameboard() {
+    if(viewerContext && gameServerUp)
     {
+      viewerContext.fillStyle = gameColours.background;     //Clears area
+      viewerContext.fillRect(0,0, canvasWidth, canvasHeight);
+      viewerContext.fillRect(startX,startY + config.game_width*blockSize + 20, config.game_height*blockSize, 10);
 
-      progBar =
+      if(gameState!=null && gameState.state>=0)
       {
-        x:startX,
-        y:startY + config.game_height*blockSize + 20,
-        width:(realtimeGamestate/config.gameFrames),
-        height:blockSize+3
-      }
-        viewerContext.fillStyle = gameColours.progressBarGreen;         //Draws progress bar at bottom - current position
-        viewerContext.fillRect(startX, progBar.y, (currentGamestate/config.gameFrames)*(config.game_width*blockSize), progBar.height);
-
-        viewerContext.fillStyle = gameColours.progressBarBlue;         //Draws progress bar at bottom - real gametime
-        viewerContext.fillRect(startX + progBar.width*(config.game_height*blockSize) -2 , progBar.y, 4, progBar.height);
-
-        viewerContext.fillStyle = gameColours.progressBarRed;         //Draws progress bar at bottom - started viewing gametime
-        viewerContext.fillRect(startX + (startedViewingGamestate/config.gameFrames)*(config.game_height*blockSize) -2, progBar.y, 4, progBar.height);
-
-
-
-        viewerContext.strokeStyle = gameColours.border;          //Draws square around viewer and progress bar
-        viewerContext.strokeRect(startX,startY, config.game_width*blockSize, config.game_height*blockSize);
-        viewerContext.strokeRect(startX,startY + config.game_height*blockSize + 20, config.game_width*blockSize, progBar.height);
-
-
-        if(gameDrawCells)
+        progBar =
         {
-          viewerContext.strokeStyle = gameColours.cellLines;
-          var loopX;
-          var loopY;
-          for(loopX = 0; loopX < config.game_width; loopX++)     //Draws squares around cells
+          x:startX,
+          y:startY + config.game_height*blockSize + 20,
+          width:(realtimeGamestate/config.gameFrames),
+          height:blockSize+3
+        }
+          viewerContext.fillStyle = gameColours.progressBarGreen;         //Draws progress bar at bottom - current position
+          viewerContext.fillRect(startX, progBar.y, (currentGamestate/config.gameFrames)*(config.game_width*blockSize), progBar.height);
+
+          viewerContext.fillStyle = gameColours.progressBarBlue;         //Draws progress bar at bottom - real gametime
+          viewerContext.fillRect(startX + progBar.width*(config.game_height*blockSize) -2 , progBar.y, 4, progBar.height);
+
+          viewerContext.fillStyle = gameColours.progressBarRed;         //Draws progress bar at bottom - started viewing gametime
+          viewerContext.fillRect(startX + (startedViewingGamestate/config.gameFrames)*(config.game_height*blockSize) -2, progBar.y, 4, progBar.height);
+
+
+
+          viewerContext.strokeStyle = gameColours.border;          //Draws square around viewer and progress bar
+          viewerContext.strokeRect(startX,startY, config.game_width*blockSize, config.game_height*blockSize);
+          viewerContext.strokeRect(startX,startY + config.game_height*blockSize + 20, config.game_width*blockSize, progBar.height);
+
+
+          if(gameDrawCells)
           {
-            for(loopY = 0; loopY < config.game_height; loopY++)
+            viewerContext.strokeStyle = gameColours.cellLines;
+            var loopX;
+            var loopY;
+            for(loopX = 0; loopX < config.game_width; loopX++)     //Draws squares around cells
             {
-              viewerContext.strokeRect(startX + loopX*blockSize, startY + loopY*blockSize, blockSize, blockSize);
+              for(loopY = 0; loopY < config.game_height; loopY++)
+              {
+                viewerContext.strokeRect(startX + loopX*blockSize, startY + loopY*blockSize, blockSize, blockSize);
+              }
             }
+          }
+
+
+          //Apple
+          var appleCoords = gameState.apple.split(' ');
+          if(appleCoords.length > 1)
+          {
+            var appleX = parseInt(appleCoords[0]);
+            var appleY = parseInt(appleCoords[1]);
+            viewerContext.fillStyle = gameColours.apple;
+            viewerContext.fillRect(startX + appleX*blockSize, startY +  appleY*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+          }
+
+
+          //Obstacles
+          viewerContext.fillStyle = gameColours.obstacles;
+          var obsStartIndex = 1;
+          var i;
+
+          //Obstacle 0
+          var obsRects = parseCoords(gameState.obstacle0,obsStartIndex);
+          for (i = 0; i < obsRects.length; i++) {
+            viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+          }
+
+          //Obstacle 1
+          obsRects = parseCoords(gameState.obstacle1,obsStartIndex);
+          for (i = 0; i < obsRects.length; i++) {
+            viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+          }
+
+          //Obstacle 2
+          obsRects = parseCoords(gameState.obstacle2,obsStartIndex);
+          for (i = 0; i < obsRects.length; i++) {
+            viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+          }
+
+
+          //Snakes
+          //Snake 0
+          var snakeStartIndex = 4;
+          viewerContext.fillStyle = gameColours.snake0;
+
+          var snakeRects = parseCoords(gameState.snake0,snakeStartIndex);
+          for (i = 0; i < snakeRects.length; i++) {
+            viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+          }
+
+          //Snake 1
+          viewerContext.fillStyle = gameColours.snake1;
+
+          snakeRects = parseCoords(gameState.snake1,snakeStartIndex);
+          for (i = 0; i < snakeRects.length; i++) {
+            viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+          }
+
+          //Snake 2
+          viewerContext.fillStyle = gameColours.snake2;
+
+          snakeRects = parseCoords(gameState.snake2,snakeStartIndex);
+          for (i = 0; i < snakeRects.length; i++) {
+            viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+          }
+
+          //Snake 3
+          viewerContext.fillStyle = gameColours.snake3;
+
+          snakeRects = parseCoords(gameState.snake3,snakeStartIndex);
+          for (i = 0; i < snakeRects.length; i++) {
+            viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+          }
+          viewerContext.drawImage(imageObj1,progBar.x+(currentGamestate/config.gameFrames)*(config.game_height*blockSize)-3,progBar.y-2);
+      }
+      else if (lastGameRef>=0){
+        var col1X = 100;
+        var col2X = 350;
+        var colStartY = 50;
+        viewerContext.fillStyle = gameColours.border;
+        viewerContext.font = "30px Arial";
+        viewerContext.fillText("Game "+lastGameRef+":", (col1X+col2X)/2-50, colStartY);
+        viewerContext.fillText("Player:", col1X, colStartY+100);
+        viewerContext.fillText("Score:", col2X, colStartY+100);
+        viewerContext.fillText("Snake 1", col1X, colStartY+200);
+        viewerContext.fillText(""+lastGameSnake0Score, col2X, colStartY+200);
+
+        viewerContext.fillText("Snake 2", col1X, colStartY+250);
+        viewerContext.fillText(""+lastGameSnake1Score, col2X, colStartY+250);
+
+        viewerContext.fillText("Snake 3", col1X, colStartY+300);
+        viewerContext.fillText(""+lastGameSnake2Score, col2X, colStartY+300);
+
+        viewerContext.fillText("Snake 4", col1X, colStartY+350);
+        viewerContext.fillText(""+lastGameSnake3Score, col2X, colStartY+350);
+      }
+    }
+
+    requestAnimationFrame(drawGameboard);
+  }
+
+  function drawServerDown() {
+    if(!gameServerUp)
+    {
+      var startLoadingY = 26;
+      var loadingYLength = 3;
+      var i;
+      var snakeStartIndex = 4;
+      var loopX;
+      var loopY;
+      var snakePos = loadingBarSnake.x + "," + loadingBarSnake.y + " " +(loadingBarSnake.x+5) + "," + loadingBarSnake.y;
+      var snakeRects = parseCoords("0 alive 0 0 "+snakePos,snakeStartIndex);
+
+      loadingBarSnake.count++;
+      if(loadingBarSnake.count > 10)
+      {
+        loadingBarSnake.count=0;
+        loadingBarSnake.x++;
+        if(loadingBarSnake.x > 44)
+        {
+          loadingBarSnake.x = 0;
+        }
+      }
+
+
+      if(serverDownContext)
+      {
+        serverDownContext.fillStyle = gameColours.background;     //Clears area
+        serverDownContext.fillRect(0,0, canvasWidth, canvasHeight);
+        serverDownContext.fillRect(startX,startY + config.game_width*blockSize + 20, loadingYLength*blockSize, 10);
+
+        serverDownContext.strokeStyle = gameColours.border;          //Draws square around viewer and progress bar
+        serverDownContext.strokeRect(startX,startY+startLoadingY*blockSize, config.game_width*blockSize, loadingYLength*blockSize);
+
+        serverDownContext.strokeStyle = gameColours.cellLines;
+
+        for(loopX = 0; loopX < config.game_width; loopX++)     //Draws squares around cells
+        {
+          for(loopY = startLoadingY; loopY < (startLoadingY+loadingYLength); loopY++)
+          {
+            serverDownContext.strokeRect(startX + loopX*blockSize, startY + loopY*blockSize, blockSize, blockSize);
           }
         }
 
+        serverDownContext.fillStyle = gameColours.snake0;
 
-        //Apple
-        var appleCoords = gameState.apple.split(' ');
-        if(appleCoords.length > 1)
+        for (i = 0; i < snakeRects.length; i++) {
+          serverDownContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+        }
+      }
+
+      if(serverDownContext2)
+      {
+        serverDownContext2.fillStyle = gameColours.background;     //Clears area
+        serverDownContext2.fillRect(0,0, canvasWidth, canvasHeight);
+        serverDownContext2.fillRect(startX,startY + config.game_width*blockSize + 20, loadingYLength*blockSize, 10);
+
+        serverDownContext2.strokeStyle = gameColours.border;          //Draws square around viewer and progress bar
+        serverDownContext2.strokeRect(startX,startY+startLoadingY*blockSize, config.game_width*blockSize, loadingYLength*blockSize);
+
+        serverDownContext2.strokeStyle = gameColours.cellLines;
+
+        for(loopX = 0; loopX < config.game_width; loopX++)     //Draws squares around cells
         {
-          var appleX = parseInt(appleCoords[0]);
-          var appleY = parseInt(appleCoords[1]);
-          viewerContext.fillStyle = gameColours.apple;
-          viewerContext.fillRect(startX + appleX*blockSize, startY +  appleY*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+          for(loopY = startLoadingY; loopY < (startLoadingY+loadingYLength); loopY++)
+          {
+            serverDownContext2.strokeRect(startX + loopX*blockSize, startY + loopY*blockSize, blockSize, blockSize);
+          }
         }
 
+        serverDownContext2.fillStyle = gameColours.snake0;
 
-        //Obstacles
-        viewerContext.fillStyle = gameColours.obstacles;
-        var obsStartIndex = 1;
-        var i;
-
-        //Obstacle 0
-        var obsRects = parseCoords(gameState.obstacle0,obsStartIndex);
-        for (i = 0; i < obsRects.length; i++) {
-          viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
-        }
-
-        //Obstacle 1
-        obsRects = parseCoords(gameState.obstacle1,obsStartIndex);
-        for (i = 0; i < obsRects.length; i++) {
-          viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
-        }
-
-        //Obstacle 2
-        obsRects = parseCoords(gameState.obstacle2,obsStartIndex);
-        for (i = 0; i < obsRects.length; i++) {
-          viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
-        }
-
-
-        //Snakes
-        //Snake 0
-        var snakeStartIndex = 4;
-        viewerContext.fillStyle = gameColours.snake0;
-
-        var snakeRects = parseCoords(gameState.snake0,snakeStartIndex);
         for (i = 0; i < snakeRects.length; i++) {
-          viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+          serverDownContext2.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
         }
-
-        //Snake 1
-        viewerContext.fillStyle = gameColours.snake1;
-
-        snakeRects = parseCoords(gameState.snake1,snakeStartIndex);
-        for (i = 0; i < snakeRects.length; i++) {
-          viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
-        }
-
-        //Snake 2
-        viewerContext.fillStyle = gameColours.snake2;
-
-        snakeRects = parseCoords(gameState.snake2,snakeStartIndex);
-        for (i = 0; i < snakeRects.length; i++) {
-          viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
-        }
-
-        //Snake 3
-        viewerContext.fillStyle = gameColours.snake3;
-
-        snakeRects = parseCoords(gameState.snake3,snakeStartIndex);
-        for (i = 0; i < snakeRects.length; i++) {
-          viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
-        }
-        viewerContext.drawImage(imageObj1,progBar.x+(currentGamestate/config.gameFrames)*(config.game_height*blockSize)-3,progBar.y-2);
+      }
     }
-    else if (lastGameRef>=0){
-      var col1X = 100;
-      var col2X = 350;
-      var colStartY = 50;
-      viewerContext.fillStyle = gameColours.border;
-      viewerContext.font = "30px Arial";
-      viewerContext.fillText("Game "+lastGameRef+":", (col1X+col2X)/2-50, colStartY);
-      viewerContext.fillText("Player:", col1X, colStartY+100);
-      viewerContext.fillText("Score:", col2X, colStartY+100);
-      viewerContext.fillText("Snake 1", col1X, colStartY+200);
-      viewerContext.fillText(lastGameSnake0Score, col2X, colStartY+200);
 
-      viewerContext.fillText("Snake 2", col1X, colStartY+250);
-      viewerContext.fillText(lastGameSnake1Score, col2X, colStartY+250);
 
-      viewerContext.fillText("Snake 3", col1X, colStartY+300);
-      viewerContext.fillText(lastGameSnake2Score, col2X, colStartY+300);
+    requestAnimationFrame(drawServerDown);
+  }
 
-      viewerContext.fillText("Snake 4", col1X, colStartY+350);
-      viewerContext.fillText(lastGameSnake3Score, col2X, colStartY+350);
+  function drawStats() {
+    if(gameServerUp)
+    {
+      if(statsContext)
+      {
+
+        statsContext.fillStyle = gameColours.background;     //Clears area
+        statsContext.fillRect(0,0, canvasWidth, canvasHeight);
+        statsContext.fillRect(startX,startY + config.game_width*blockSize + 20, config.game_height*blockSize, 10);
+
+        statsContext.strokeStyle = gameColours.border;          //Draws square around viewer and progress bar
+        statsContext.strokeRect(startX,startY, config.game_width*blockSize, config.game_height*blockSize);
+
+        statsContext.font = "30px Verdana";
+
+        statsContext.fillStyle = gameColours.obstacles;
+        if(gameCurrStatsUser && gameCurrStatsUser.id!=(-1))
+        {
+          statsContext.fillText(gameCurrStatsUser.username,startX+ ((config.game_width)*blockSize-(statsContext.measureText(gameCurrStatsUser.username).width))/2,startY+5*blockSize);
+
+          statsContext.font = "20px Verdana";
+
+          statsContext.fillText("Maximum length:",startX+ 5*blockSize,startY+15*blockSize);
+          statsContext.fillText("Average score:",startX+ 5*blockSize,startY+20*blockSize);
+          statsContext.fillText("Total kills:",startX+ 5*blockSize,startY+25*blockSize);
+
+          statsContext.fillText(gameCurrStatsUser.max_length,startX+ 40*blockSize,startY+15*blockSize);
+          statsContext.fillText(gameCurrStatsUser.avg_length,startX+ 40*blockSize,startY+20*blockSize);
+          statsContext.fillText(gameCurrStatsUser.no_of_kills,startX+ 40*blockSize,startY+25*blockSize);
+        }
+        else if(gameCurrStatsDivision && gameCurrStatsDivision.id!=(-1))
+        {
+          statsContext.fillText(gameCurrStatsDivision.division,startX+ ((config.game_width)*blockSize-(statsContext.measureText(gameCurrStatsDivision.division).width))/2,startY+5*blockSize);
+
+          statsContext.font = "20px Verdana";
+
+          statsContext.fillText("Average score:",startX+ 5*blockSize,startY+15*blockSize);
+          statsContext.fillText("Average deaths:",startX+ 5*blockSize,startY+20*blockSize);
+          statsContext.fillText("Average time to apple:",startX+ 5*blockSize,startY+25*blockSize);
+
+          statsContext.fillText(gameCurrStatsDivision.avg_score,startX+ 40*blockSize,startY+15*blockSize);
+          statsContext.fillText(gameCurrStatsDivision.avg_deaths,startX+ 40*blockSize,startY+20*blockSize);
+          statsContext.fillText(gameCurrStatsDivision.avg_time_to_apple,startX+ 40*blockSize,startY+25*blockSize);
+        }
+
+
+
+      }
+    }
+
+    requestAnimationFrame(drawStats);
+  }
+
+  function getConfig() {
+
+    config =
+    {
+      game_time : 300,
+      game_mode : 'GROW',
+      game_speed : 50,
+      apple_growth : 5,
+      starting_length : 5,
+      num_snakes : 4,
+      num_apples : 1,
+      special_apple : true,
+      apple_limit : 200,
+      decay_rate : 0.1,
+      game_width  : 50,
+      game_height : 50,
+      between_rounds  : 10000,
+      num_obstacles : 3,
+      num_zombies  : -1,
+      zombie_speed  : -1,
+      invisibility_period  : -1,
+      gameFrames : 300*(1000/50)  //game_time * (1000 ms / game speed)
+    };
+
+  }
+
+  function refreshLeaderboardAndDivisions(){
+    //getDivisions();
+    //getPlayers();
+  }
+
+  async function cacheGame(gameRef, game){
+    window.sessionStorage.clear();
+    window.sessionStorage.setItem("cachedGame",JSON.stringify(game));              //Crashes after storing too many games, so set to only store last 1
+    let tempGameStateArr = {};
+    tempGameStateArr = JSON.parse(sessionStorage.getItem("cachedGame")!);
+    if(tempGameStateArr!=null)
+    {
+      setIsGameCached(true);
     }
   }
 
-  lastFrameID = requestAnimationFrame(drawGameboard);
-}
+  function saveGameData(gameReference, saveGameState){
+    lastGameRef = gameReference;
+    lastGameSnake0Score = saveGameState.snake0Score;
+    lastGameSnake1Score = saveGameState.snake1Score;
+    lastGameSnake2Score = saveGameState.snake2Score;
+    lastGameSnake3Score = saveGameState.snake3Score;
+    return true;
+  }
 
-function clickEventListener(event) {
-  /*
-  console.log("clicked "+event.pageX);
-  console.log("clicked "+event.pageY);
-  */
-  var x = event.pageX - viewerX;
-  var y = event.pageY - viewerY;
-
-  if (y > progBar.y && y < progBar.y + progBar.height
-             && x > progBar.x && x < progBar.x + progBar.width) {
-             gameRealtime = false;
-             updatingByLogic = true;
-             var clickedGameState = (x- startX)*config.game_width/blockSize;
-             if(clickedGameState >= startedViewingGamestate)
-             {
-               currentGamestate = clickedGameState;
-             }
-             console.log('clicked progress  bar' +clickedGameState);
-         }
-}
-
-function getConfig() {
-  //fetch(ENDPOINT+'/games/config')
-  /*
-  disabled until I can get tests to work
-  fetch('https://httpbin.org/ip')//IP to test for now.
-        .then(response => response.json())
-        .then(data =>
-        {
-          console.log(data);
-        });
-        */
-
-  //Save game settings
-
-  config =
-  {
-    game_time : 300,
-    game_mode : 'GROW',
-    game_speed : 50,
-    apple_growth : 5,
-    starting_length : 5,
-    num_snakes : 4,
-    num_apples : 1,
-    special_apple : true,
-    apple_limit : 200,
-    decay_rate : 0.1,
-    game_width  : 50,
-    game_height : 50,
-    between_rounds  : 10000,
-    num_obstacles : 3,
-    num_zombies  : -1,
-    zombie_speed  : -1,
-    invisibility_period  : -1,
-    gameFrames : 300*(1000/50)  //game_time * (1000 ms / game speed)
-  };
-
-}
-
-
-function resetGamestate()
-{
-  gameState =
-  {
-    ref: -1,
-    state: -1,
-    apple: "",
-    obstacle0: "",
-    obstacle1: "",
-    obstacle2: "",
-    snake0: "",
-    snake1: "",
-    snake2: "",
-    snake3: "",
-    snake0Score: -1,
-    snake1Score: -1,
-    snake2Score: -1,
-    snake3Score: -1
-  };
-  waitingForFirstGamestate = true;
-  gameStateArr = {};
-  realtimeGamestate = 0;
-  currentGamestate = 0;
-}
-
-
-async function cacheGame(gameRef, game){
-  window.sessionStorage.clear();
-  window.sessionStorage.setItem("cachedGame",JSON.stringify(game));              //Crashes after storing too many games, so set to only store last 1
-  //cachedGames.push(gameRef);
-  console.log("Caching game: "+gameRef);
-
-    // @ts-ignore: Object is possibly 'null'.
-    let tempGameStateArr = {};
-    tempGameStateArr = JSON.parse(sessionStorage.getItem("cachedGame")!);
-    console.log("Cached "+Object.keys(tempGameStateArr).length+" gamestates");
-
-}
-
-function saveGameData(gameReference, saveGameState)
-{
-  lastGameRef = gameReference;
-  lastGameSnake0Score = saveGameState.snake0Score;
-  lastGameSnake1Score = saveGameState.snake1Score;
-  lastGameSnake2Score = saveGameState.snake2Score;
-  lastGameSnake3Score = saveGameState.snake3Score;
-  return true;
-}
-
-function updateGameState()
-{
-  //This will fetch the current game state from the server
-  if(true)
-  {
-    if(realtimeGamestate>config.gameFrames)
+  function resetGamestate(){
+    gameState =
     {
-      realtimeGamestate = 0;
-    }
+      ref: -1,
+      state: -1,
+      apple: "",
+      obstacle0: "",
+      obstacle1: "",
+      obstacle2: "",
+      snake0: "",
+      snake1: "",
+      snake2: "",
+      snake3: "",
+      snake0Score: -1,
+      snake1Score: -1,
+      snake2Score: -1,
+      snake3Score: -1
+    };
+    waitingForFirstGamestate = true;
+    gameStateArr = {};
+    realtimeGamestate = 0;
+    currentGamestate = 0;
+  }
 
-    if(appleX == lastAppleX && appleY == lastAppleY)
+  function updateGameState(){
+    //This will fetch the current game state from the server
+    if(true)
     {
-      appleHealth-=config.decay_rate;
-    }
-    else
-    {
-      appleHealth = 5;
-      lastAppleX = appleX;
-      lastAppleY = appleY;
-    }
+      if(realtimeGamestate>config.gameFrames)
+      {
+        setGameRef(prevState=> (prevState+1));
+        cacheGame(gameRef, gameStateArr);
+        resetGamestate();
+      }
 
-    if(appleHealth < -5)
-    {
-      appleX = Math.floor(Math.random() * config.game_width);
-      appleY = Math.floor(Math.random() * config.game_height);
-    }
+      if(appleX === lastAppleX && appleY === lastAppleY)
+      {
+        appleHealth-=config.decay_rate;
+      }
+      else
+      {
+        appleHealth = 5;
+        lastAppleX = appleX;
+        lastAppleY = appleY;
+      }
 
-    realtimeGamestate++;
+      if(appleHealth < -5)
+      {
+        appleX = Math.floor(Math.random() * config.game_width);
+        appleY = Math.floor(Math.random() * config.game_height);
+      }
 
-    appleCol.r = (appleHealth+5) * 25.5;
-    appleCol.g = (appleHealth+5) * 21.5;
+      realtimeGamestate++;
 
-    gameColours.apple = 'rgb('+appleCol.r+','+appleCol.g+','+appleCol.b+')';
-    gameStateArr[realtimeGamestate] =
-    {
-      ref: 0,
-      state: 0,
-      apple: appleX+" "+appleY,
-      obstacle0: "1 16,32 16,36",
-      obstacle1: "2 47,26 43,26",
-      obstacle2: "0 30,21 26,21",
+      appleCol.r = (appleHealth+5) * 25.5;
+      appleCol.g = (appleHealth+5) * 21.5;
+
+      gameColours.apple = 'rgb('+appleCol.r+','+appleCol.g+','+appleCol.b+')';
+      gameStateArr[realtimeGamestate] =
+      {
+        ref: 0,
+        state: 0,
+        apple: appleX+" "+appleY,
+        obstacle0: "1 16,32 16,36",
+        obstacle1: "2 47,26 43,26",
+        obstacle2: "0 30,21 26,21",
+        snake0: "",
+        snake1: "",
+        snake2: "",
+        snake3: "",
+        snake0Score: 0,
+        snake1Score: 0,
+        snake2Score: 0,
+        snake3Score: 0
+      };
+
+      /*
       snake0: "0 alive 26 2 9,5 3,5 3,9 17,9",
       snake1: "1 alive 15 2 48,16 45,16 45,10",
       snake2: "2 alive 32 2 33,38 19,38",
       snake3: "3 alive 7 2 1,47 6,47 6,30 8,30",
-      snake0Score: 0,
-      snake1Score: 0,
-      snake2Score: 0,
-      snake3Score: 0
-    };
-  }
-  if(gameRewind)
-  {
-    currentGamestate-=rewindMulti;
-    if(currentGamestate <= 0)
-    {
-      gameRewind = false;
-      gameRealtime = true;
-      rewindMulti = 2;
-      updatingByLogic = true;
+      */
     }
-  }
-  else if(gameFfwd)
-  {
-    currentGamestate+=ffwdMulti;
-
-    if(currentGamestate >= realtimeGamestate)
+    if(gameRewind)
     {
-      gameFfwd = false;
-      gameRealtime = true;
-      ffwdMulti = 2;
-      updatingByLogic = true;
+      currentGamestate-=rewindMulti;
+      if(currentGamestate <= 0)
+      {
+        setRewind(false);
+        setRealtime(true);
+        rewindMulti = 2;
+      }
     }
+    else if(gameFfwd)
+    {
+      currentGamestate+=ffwdMulti;
+
+      if(currentGamestate >= realtimeGamestate)
+      {
+        setFfwd(false);
+        setRealtime(true);
+        ffwdMulti = 2;
+      }
+    }
+    else if(!gamePaused)
+    {
+      currentGamestate++;
+    }
+    gameState = gameStateArr[currentGamestate];
   }
-  else if(!gamePaused)
-  {
-    currentGamestate++;
+
+  function clickEventListener(event) {
+    /*
+    console.log("clicked "+event.pageX);
+    console.log("clicked "+event.pageY);
+    */
+    var x = event.pageX - viewerX;
+    var y = event.pageY - viewerY;
+
+    if (y > progBar.y && y < progBar.y + progBar.height
+               && x > progBar.x && x < progBar.x + progBar.width) {
+               setRealtime(false);
+               var clickedGameState = (x- startX)*config.game_width/blockSize;
+               if(clickedGameState >= startedViewingGamestate)
+               {
+                 currentGamestate = clickedGameState;
+               }
+               console.log('clicked progress  bar' +clickedGameState);
+           }
   }
-  gameState = gameStateArr[currentGamestate];
-}
 
-function refreshLeaderboardAndDivisions()
-{
-  getDivisions();
-  getPlayers();
-}
-
-function getDivisions() {
-/*
-This function will be used to fill in the divisions for the game.
-At the moment it is commented out because the server isn't up yet.
-Number of divisions is hardcoded to 10.
-  fetch(ENDPOINT+COUNT_PATH)
-        .then(response => response.json())
-        .then(data =>
-        {
-          console.log(data);
-        });
-*/
-
-// populating division dropdown list
-divisions = [];
- var i;
- nGames = 10;
- for(i = 1;i <= nGames;i++)
- {
-   divisions.push({ label: "Division "+i, value: "Division "+i});
- }
- if(nGames > 0)
- {
-   currDivision = 0;
- }
-}
-
-
-function getPlayers() {
-  buildLeaderboard([["Player1", "16", "0"], ["Player2", "12", "0"],["Player3", "11", "0"],
-["Player4", "9", "0"],["Player5", "7", "1"],["Player6", "6", "1"],["Player7", "2", "1"],]);
-}
-
-function buildLeaderboard(tableData) {
-  var tableBody = document.getElementById('leaderboardbody');
-
-  tableData.forEach(function(rowData) {
-    var row = document.createElement('tr');
-
-    var cellName = document.createElement('td');
-    cellName.appendChild(document.createTextNode(rowData[0]));
-    row.appendChild(cellName);
-
-    var cellScore = document.createElement('td');
-    var linkScore = document.createElement('a');
-    linkScore.href="#"
-    linkScore.textContent=rowData[1];
-    cellScore.appendChild(linkScore);
-    row.appendChild(cellScore);
-
-    var cellDiv = document.createElement('td');
-    var linkDiv = document.createElement('a');
-    linkDiv.href="WatchGame?div="+rowData[2]
-    linkDiv.textContent=rowData[2]
-    cellDiv.appendChild(linkDiv);
-    row.appendChild(cellDiv);
-
-    tableBody?.appendChild(row);
-  });
-}
-
-function handleClick(e)
-{
-  e.preventDefault();
-  console.log("Test");
-}
-
-function App()  {
-  const viewerRef = React.useRef<HTMLCanvasElement>(null);
-  const [context, setContext] = React.useState<CanvasRenderingContext2D | null>(null);
-  const [response, setResponse] = useState("Connecting...");
-  const [cachedGamesList, setCachedGamesList] = useState("");
-  const [gameRef, setGameRef] = useState(-1);
-  const [paused, setPaused] = useState(false);
-  const [rewind, setRewind] = useState(false);
-  const [ffwd, setFfwd] = useState(false);
-  const [realtime, setRealtime] = useState(true);
-  const [drawCells, setDrawCells] = useState(true);
-
-    useEffect(() => {
+  useEffect(() => {
 
       if (viewerRef.current) {
         if(!addedClickEvent)
@@ -530,62 +645,271 @@ function App()  {
                 }
         const renderCtx = viewerRef.current.getContext('2d');
 
-
         if (renderCtx) {
-          setContext(renderCtx);
+          setViewerContext(renderCtx);
         }
       }
 
-      if (context)
+      if (viewerContext)
       {
-        if(lastFrameID > 0)
-        {
-          cancelAnimationFrame(lastFrameID);
-        }
-        viewerContext = context;
-        drawGameboard();
+        drawGameboard();}}, [viewerContext]);
+
+  useEffect(() => {
+
+    if (statsRef.current) {
+      const statsRenderContext = statsRef.current.getContext('2d');
+      if (statsRenderContext) {
+        setStatsContext(statsRenderContext);
       }
-    }, [context]);
+    }
 
-        useEffect(() => {
-          //This useEffect runs once when the page is loaded.
+    if (statsContext)
+    {
+      drawStats();
+    }}, [statsContext]);
 
-          //Request config from server (refresh timer, end of game timer, number of divisions)
-          //Set up game settings
-          //Load leaderboard and division selector
-          //Set default current division to 0 (top of list)
-          //Start loop to request current division information from server every x ms
-          //On end of game string, start end of game timer, and display results from last game.
-          //refresh leaderboard data and division data
-          //On start of new game, refresh leaderboard data and division data
+  useEffect(() => {
 
-          getConfig();
-          refreshLeaderboardAndDivisions();
-          updateGameStateIntervalRef = setInterval(updateGameState, config.game_speed);
-          }, []);
+      if (serverDownRef.current) {
+        const serverDownRenderCtx = serverDownRef.current.getContext('2d');
+        if (serverDownRenderCtx) {
+          setServerDownContext(serverDownRenderCtx);
+        }
+      }
 
-          useEffect(() => {
+      if (serverDownContext)
+      {
+        drawServerDown();
+      }}, [serverDownContext]);
 
-            if(updatingByLogic)
-            {
-              setPaused(gamePaused);
-              setRewind(gameRewind);
-              setFfwd(gameFfwd);
-              setRealtime(gameRealtime);
-              updatingByLogic = false;
-            }
-            else {
-              gamePaused = paused;
-              gameRewind = rewind;
-              gameFfwd = ffwd;
-              gameRealtime = realtime;
-            }
-            if(gamePaused || gameRewind || gameFfwd)
-            {
-              setRealtime(false);
-            }
-            gameDrawCells = drawCells;
-          }, [paused,rewind,ffwd,drawCells,realtime]);
+  useEffect(() => {
+
+      if (serverDownRef2.current) {
+        const serverDownRenderCtx2 = serverDownRef2.current.getContext('2d');
+        if (serverDownRenderCtx2) {
+          setServerDownContext(serverDownRenderCtx2);
+        }
+      }
+
+      if (serverDownContext2)
+      {
+        drawServerDown();
+      }}, [serverDownContext2]);
+
+  useEffect(() => {
+    initVars();
+    getConfig();
+    refreshLeaderboardAndDivisions();
+    updateGameStateIntervalRef = setInterval(updateGameState, config.game_speed);
+    }, []);
+
+  useEffect(() => {
+    let isMounted = true;               // note mutable flag
+    getDivisionData().then(response => {
+      if (isMounted) setDivisions(response.data);    // add conditional check
+    })
+
+    getPlayerData().then(response => {
+      if (isMounted) setPlayers(response.data);    // add conditional check
+    })
+
+    getPlayerStatsData().then(response => {
+      if (isMounted)
+      {
+        var playerStatsDict = {};
+
+        for (var i = 0, player; i < response.data.length; i++) {
+           player = response.data[i];
+           playerStatsDict[player.username] = player;
+        }
+
+        setPlayersStats(playerStatsDict);
+      }     // add conditional check
+    })
+
+    getDivisionStatsData().then(response => {
+      if (isMounted)
+      {
+        var divisionStatsDict = {};
+
+        for (var i = 0, division; i < response.data.length; i++) {
+           division = response.data[i];
+           divisionStatsDict[division.division] = division;
+        }
+
+        setDivisionStats(divisionStatsDict);
+      }     // add conditional check
+    })
+
+    return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
+  }, []);
+
+  useEffect(() => {
+    gamePaused = paused;
+    gameFfwd = ffwd;
+    gameRewind = rewind;
+    gameRealtime = realtime;
+    gameDrawCells = drawCells;
+    gameCurrStatsUser = currentStatsUser;
+    gameCurrStatsDivision = currentStatsDivision;}, [paused, ffwd, rewind, realtime, drawCells,currentStatsUser,currentStatsDivision]);
+
+  useEffect(() => {
+      gameServerUp = serverUp;
+      if(serverUp)
+      {
+        if(viewerRef.current)
+        {
+          const renderCtx = viewerRef.current.getContext('2d');
+
+          if (renderCtx) {
+            setViewerContext(renderCtx);
+          }
+        }
+
+        if(statsRef.current)
+        {
+          const statsRenderContext = statsRef.current.getContext('2d');
+
+          if (statsRenderContext) {
+            setStatsContext(statsRenderContext);
+          }
+        }
+      }
+      else{
+        if (serverDownRef.current) {
+          const serverDownRenderCtx = serverDownRef.current.getContext('2d');
+          if (serverDownRenderCtx) {
+            setServerDownContext(serverDownRenderCtx);
+          }
+        }
+        if (serverDownRef2.current) {
+          const serverDownRenderCtx2 = serverDownRef2.current.getContext('2d');
+          if (serverDownRenderCtx2) {
+            setServerDownContext2(serverDownRenderCtx2);
+          }
+        }
+
+      }
+
+    }, [serverUp]);
+
+  function handleUsernameClick(e) {
+    setIndex(1);
+    setCurrentStatsDivision(gameCurrStatsDivisionEmpty);
+    setCurrentStatsUser(playersStats[e]);
+  }
+
+  function handleDivisionStatsClick(e) {
+    setIndex(1);
+    setCurrentStatsUser(gameCurrStatsUserEmpty);
+    setCurrentStatsDivision(divisionStats[selectedDivision]);
+  }
+
+  function handleDivisionClick(e) {
+  setIndex(0);
+  setSelectedDivision("Division "+e);
+  }
+
+  function initVars(){
+    gamePaused = paused;
+    gameFfwd = ffwd;
+    gameRewind = rewind;
+    gameRealtime = realtime;
+    gameDrawCells = drawCells;
+    gameServerUp = serverUp;
+  }
+
+  const getPlayerData = async () => {
+      const response = await axios.get(PlayerURL)
+      return response;
+  }
+
+  const getPlayerStatsData = async () => {
+      const response = await axios.get(PlayerStatsURL)
+      return response;
+  }
+
+  const getDivisionStatsData = async () => {
+      const response = await axios.get(DivisionStatsURL)
+      return response;
+  }
+
+  const getDivisionData = async () => {
+      const response = await axios.get(DivisionURL)
+      return response;
+  }
+
+  const renderTableHeader = () => {
+      let headerElement = ['score', 'name','division']
+      return headerElement.map((key, index) => {
+          return <th key={index}>{key.toUpperCase()}</th>
+      })
+  }
+
+  const renderTableBody = () => {
+    if(serverUp)
+    {
+      return players && players.map(({ id, username, score, division }) => {
+          return (
+              <tr key={id}>
+                  <td>{score}</td>
+                  <td className='opration'>
+                      <a className='button' onClick={() =>handleUsernameClick(username)}>{username}</a>
+                  </td>
+                  <td className='opration'>
+                      <a className='button' onClick={() =>handleDivisionClick(division)}>{division}</a>
+                  </td>
+              </tr>
+          )
+      })
+    }
+    else
+    {
+      return (
+          <tr key='0'>
+              <td>{"Connecting..."}</td>
+              <td>{"Connecting..."}</td>
+              <td>{"Connecting..."}</td>
+          </tr>
+      )
+    }
+  }
+
+  const handleSelect = (selectedIndex, e) => {
+    setIndex(selectedIndex);
+  };
+
+
+
+  function logChange(event){
+         setSelectedDivision(event.target.value);
+     };
+
+  const renderDivisionSelect = () => {
+    if(serverUp)
+    {
+      return (
+        <div>
+          {['division'].map(key => (
+            <select key={key} value={selectedDivision} onChange={logChange}>
+              {divisions.map(({ [key]: value }) => <option key={value}>{value}</option>)}
+            </select>
+          ))}
+        </div>
+      )
+    }
+      else{
+        return (
+          <div>
+            {['division'].map(key => (
+              <select key={key}>
+                {<option key={0}>{"Connecting..."}</option>}
+              </select>
+            ))}
+          </div>
+        )
+      }
+  }
 
   return (
     <>
@@ -593,7 +917,7 @@ function App()  {
         <nav>
             <div className="logo">
                 <h4>runtime</h4>
-                <h4>Terror</h4>
+                <h4 onClick={() => setServerUp(prevState => !prevState)}>Terror</h4>
             </div>
             <ul className="nav-links">
                 <li><a href="">Watch</a></li>
@@ -606,88 +930,122 @@ function App()  {
     </header>
     <div className="row">
         <div className="column left">
-        <div id="header" className="alt">
-                <a className="logo" href="/"><strong>Snake AI Competition</strong> 2020</a>
-            </div>
           <h2>Division</h2>
-          <select>
-          {divisions.map(division => (
-            <option
-              key={division.value}
-              value={division.value}>
-              {division.label}
-            </option>
-          ))}
-          </select>
-        </div>
-        <div className="column middle">
-
-        <div
-        id = "viewer"
-        style={{float: 'left'}}>
-          <canvas
-            id="viewer"
-            ref={viewerRef}
-            width={canvasWidth}
-            height={canvasHeight}
-            style={{
-              border: '2px solid #000',
-              marginTop: 10,
-              float: 'left'
-            }}
-          ></canvas>
-
+            {renderDivisionSelect()}
           <div>
+            <button onClick={()=>handleDivisionStatsClick(1)}>
+              Stats
+            </button>
+          </div>
+        </div>
 
-          <div id="viewerTimeControls" className="buttons">
+        <div className="column middle">
+        <div className="custom_carousel_main">
+                <Carousel activeIndex={index} onSelect={handleSelect} controls={false} indicators={false} interval={null} wrap={false}>
+                  <Carousel.Item>
+                    <div>
+                         <h2 className="centered" style={{
+                           marginTop: 10
+                         }}>{serverUp ? "Current Game" : "Connecting to server..."}</h2>
+                         <div
+                         className="centered">
+                         {serverUp ? <canvas
+                           ref={viewerRef}
+                           width={canvasWidth}
+                           height={canvasHeight}
+                           style={{
+                             border: '2px solid #000',
+                             marginTop: 10,
+                             marginBottom: 10
+                           }}
+                         ></canvas> : <canvas
+                           ref={serverDownRef}
+                           width={canvasWidth}
+                           height={canvasHeight}
+                           style={{
+                             border: '2px solid #000',
+                             marginTop: 10,
+                             marginBottom: 10
+                           }}
+                         ></canvas>}
+                        </div>
+                       </div>
+                       </Carousel.Item>
+                       <Carousel.Item>
+                       <div>
+                       <h2 className="centered" style={{
+                         marginTop: 10
+                       }}>{serverUp ? "Statistics" : "Connecting to server..."}</h2>
+                       <div
+                       className="centered">
+                       {serverUp ? <canvas
+                         id="stats"
+                         ref={statsRef}
+                         width={canvasWidth}
+                         height={canvasHeight}
+                         style={{
+                           border: '2px solid #000',
+                           marginTop: 10,
+                           marginBottom: 10
+                         }}
+                       ></canvas> : <canvas
+                         id="serverDown2"
+                         ref={serverDownRef2}
+                         width={canvasWidth}
+                         height={canvasHeight}
+                         style={{
+                           border: '2px solid #000',
+                           marginTop: 10,
+                           marginBottom: 10
+                         }}
+                       ></canvas>}
+                      </div>
+                      </div>
+                      </Carousel.Item>
+                    </Carousel>
+           </div>
+           <div style={{ visibility: (index===0 && serverUp) ? "visible" : "hidden" }} id="viewerTimeControls" className="buttonscenteredRow">
             <button onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(false);currentGamestate = startedViewingGamestate}}><i className="material-icons">skip_previous</i></button>
             <button onClick={() => {setPaused(false);setRewind(true);setFfwd(false); setRealtime(false);}}><i className="material-icons">fast_rewind</i></button>
             <button onClick={() => {setPaused(prevState => !prevState);setRewind(false);setFfwd(false); setRealtime(false);}}><i className="material-icons">{paused ? "play_circle_outline" : "pause_circle_outline"}</i></button>
             <button onClick={() => {setPaused(false);setRewind(false);setFfwd(true); setRealtime(false);}}><i className="material-icons">fast_forward</i></button>
-            <button style={{ visibility: realtime ? "hidden" : "visible" }} onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(true);currentGamestate = realtimeGamestate}}>
-            {<i className="material-icons">skip_next</i>}
-            </button>
+            <button style={{ visibility: (realtime ||  (index!==0)) ? "hidden" : "visible" }} onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(true);currentGamestate = realtimeGamestate}}>{<i className="material-icons">skip_next</i>}</button>
+           </div>
+           <div style={{ visibility: (index===0 && serverUp) ? "visible" : "hidden" }} id="viewerLookControls" className="buttonscenteredSingle">
+            <button onClick={() => {setDrawCells(prevState => !prevState)}}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
           </div>
-          <div id="viewerLookControls" className="buttons">
-          <button onClick={() => {setDrawCells(prevState => !prevState)}}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
+           <div style={{ visibility: (index===0 && serverUp && isGameCached) ? "visible" : "collapse" }} id="viewerChangeControls" className="buttonscenteredSingle">
+             <button onClick={() => {setPaused(false);setRewind(false);setFfwd(false); setRealtime(false);currentGamestate = startedViewingGamestate;}}><i className="material-icons">settings_backup_restore</i></button>
           </div>
-          <p>
-          {"Game number: "+gameRef}
-          </p>
-          <p>
-          {response}
-          </p>
-          <p>
-          {cachedGamesList}
-          </p>
-              <p className="copyright">
-                Kludged together with duct tape and prayers
-                  <br/>
-                  © Runtime Terror
-                  <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="Congrats! You found it..." id="hints">
-                      <i className="fa fa-television"></i>
-                  </a>
-                  <br/>University of the Witwatersrand, South Africa</p>
-          </div>
-        </div>
-        </div>
 
-        <div className="column right" style={{
-          float: 'right'
-        }}>
-        <Leaderboard />
+         </div>
+        <div className="column right" style={{float: 'right'}}>
+          <h1 id='title'>Leaderboard</h1>
+          <table id='player'>
+              <thead>
+                  <tr>{renderTableHeader()}</tr>
+              </thead>
+              <tbody>
+                  {renderTableBody()}
+              </tbody>
+          </table>
+          <div style={{ visibility: "collapse"}} id="hiddenButtons" className="buttons">
+          <button onClick={() => {handleUsernameClick("1"); handleDivisionClick("1");}}>
+          {<i>triggerClickFunctions</i>}
+          </button>
+          </div>
         </div>
-      </div>
-      <div style={{ visibility: "collapse"}} id="hiddenButtons" className="buttons">
-      <button onClick={() => {updatingByLogic = true;setPaused(prevState => prevState);}}>
-      {<i>triggerLogicUpdate</i>}
-      </button>
-      <button onClick={() => {resetGamestate(); cacheGame(1,1);}}>
-      {<i>triggerMiscFunctions</i>}
-      </button>
-      <button onClick={() => {drawGameboard();}}>
-      {<i>triggerDrawGameboard</i>}
-      </button>
+        <div style={{ visibility: "collapse"}} id="hiddenButtons" className="buttons">
+          <button onClick={() => {setPaused(prevState => prevState);}}>
+            {<i>triggerLogicUpdate</i>}
+          </button>
+          <button onClick={() => {resetGamestate(); cacheGame(1,1);}}>
+            {<i>triggerMiscFunctions</i>}
+          </button>
+          <button onClick={() => {drawGameboard();}}>
+          {<i>triggerDrawGameboard</i>}
+          </button>
+        </div>
       </div>
       </>
   );

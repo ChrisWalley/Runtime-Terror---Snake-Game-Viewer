@@ -51,12 +51,17 @@
     "@types/jest": "^26.0.22",
     "@wojtekmaj/enzyme-adapter-react-17": "^0.6.1",
     "babel-jest": "^26.6.3",
+    "bootstrap": "^4.6.0",
     "canvas": "^2.8.0",
     "coveralls": "^3.1.0",
     "enzyme": "^3.11.0",
     "jest": "^26.6.0",
     "joi": "^17.4.0",
+    "jquery": "^3.6.0",
     "node-fetch": "^2.6.1",
+    "popper.js": "^1.16.1",
+    "react-bootstrap": "^1.6.0",
+    "react-select": "^4.3.1",
     "ts-jest": "^26.5.6",
     "typescript": "^4.2.4"
   }
