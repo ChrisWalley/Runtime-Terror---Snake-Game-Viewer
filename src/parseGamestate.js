@@ -14,7 +14,7 @@ function parseGamestate(gamestate, index)
 {
 
   var lines = gamestate.split('\n');
-  if(lines.count < 7)
+  if(lines.length < 7)
   {
     return null;
   }
