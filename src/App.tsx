@@ -1,21 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from 'axios';
 import Carousel from 'react-bootstrap/Carousel';
-import Select from 'react-select';
 
-
-const PlayerURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Player.json'
+const PlayerURL = 'https://marker.ms.wits.ac.za/snake/agents/'
 const PlayerStatsURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Stats.json'
-const DivisionURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Division.json'
+const DivisionURL = 'https://marker.ms.wits.ac.za/snake/leagues'
 const DivisionStatsURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/DivisionStats.json'
-
-const ENDPOINT = "http://walleyco.de:3001";
-const CONFIG_PATH = 'games/config';
-const COUNT_PATH = 'games/count';
-const fetch = require("node-fetch");
+const DivisionGamestatesURL = 'https://marker.ms.wits.ac.za/snake/games/'
 
 const parseCoords = require('./parseCoords');
-var whatWatch =0;
+const parseGamestate = require('./parseGamestate');
 const canvasHeight = 550;
 const canvasWidth = 520;
 
@@ -24,6 +18,7 @@ const startX = 10;
 const startY = 10;
 
 var drawSnakeImage = true;
+var drawAppleImage = true;
 
 var loadingBarSnake =
 {
@@ -51,9 +46,6 @@ let gameStateArr = {};
 
 var startedViewingGamestate = 0;
 
-var currDivision = -1;
-var nGames = 0;
-
 var config;
 
 var gameState;
@@ -71,7 +63,8 @@ var gameColours =
   snake0:'rgb(208,0,108)',
   snake1: 'rgb(108,50,108)',
   snake2: 'rgb(20,0,100)',
-  snake3: 'rgb(0,205,108)'
+  snake3: 'rgb(0,205,108)',
+  snakehead: 'rgb(139,205,70)'
 };
 
 var gameCurrStatsUser =
@@ -112,6 +105,11 @@ var gameCurrStatsDivisionEmpty =
   avg_time_to_apple:""
 };
 
+var gameDivisionInfo =
+{
+  count: -1
+};
+
 var appleCol =
 {
   r:0,
@@ -126,18 +124,20 @@ var progBar = {
   height:0
 };
 
-var imageObj1 = new Image();
-imageObj1.src = 'https://www.walleyco.de/snake.png'
+var snakeHeadImg = new Image();
+snakeHeadImg.src = 'https://www.walleyco.de/snake.png'
 
-var viewerX = 0;
-var viewerY = 0;
+var appleImg = new Image();
+appleImg.src = 'https://www.walleyco.de/snake.png'
+
 var gamePaused = false;
 var gameFfwd = false;
 var gameRewind = false;
 var gameRealtime = true;
-var gameDrawCells = true;
+var gameDrawCells = false;
 var gameServerUp = false;
-var gameSelectedDivision = "Division 0";
+var gameSelectedDivision = 0;
+var gameGamestates = {count:0,states:new Array(0)};
 
 function App()  {
 
@@ -166,7 +166,9 @@ function App()  {
   const [divisionStats, setDivisionStats] = useState({})
   const [currentStatsUser, setCurrentStatsUser] = useState(gameCurrStatsUser)
   const [currentStatsDivision, setCurrentStatsDivision] = useState(gameCurrStatsDivision)
-  const [divisions, setDivisions] = useState([])
+  const [divisions, setDivisions] = useState(new Array(0))
+  const [divisionInfo, setDivisionInfo] = useState(gameDivisionInfo)
+  const [gamestates, setGamestates] = useState(gameGamestates)
 
 
   useEffect(() => {
@@ -228,18 +230,39 @@ function App()  {
   useEffect(() => {
     initVars();
     getConfig();
-    refreshLeaderboardAndDivisions();
     setInterval(updateGameState, config.game_speed);
     }, []);
 
   useEffect(() => {
     let isMounted = true;               // note mutable flag
     getDivisionData().then(response => {
-      if (isMounted) setDivisions(response.data);    // add conditional check
+      if (isMounted)// add conditional check
+      {
+        setServerUp(true);
+        var n = response.data["count"];
+        console.log("Div "+selectedDivision);
+        var divNames = new Array(n)
+        for(var i = 0; i < n;i++)
+        {
+          divNames[i] = {id:i,division:"Division "+i};
+        }
+        setDivisions(divNames);
+      }
     })
 
+    return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;               // note mutable flag
+    
     getPlayerData().then(response => {
       if (isMounted) setPlayers(response.data);    // add conditional check
+    })
+
+    getGamestatesData().then(response => {
+      console.log(response.data);
+      if (isMounted) setGamestates(response.data);    // add conditional check
     })
 
     getPlayerStatsData().then(response => {
@@ -269,9 +292,8 @@ function App()  {
         setDivisionStats(divisionStatsDict);
       }     // add conditional check
     })
-
     return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
-  }, []);
+  }, [selectedDivision]);
 
   useEffect(() => {
     gamePaused = paused;
@@ -281,7 +303,9 @@ function App()  {
     gameDrawCells = drawCells;
     gameCurrStatsUser = currentStatsUser;
     gameCurrStatsDivision = currentStatsDivision;
-    gameSelectedDivision = selectedDivision;}, [paused, ffwd, rewind, realtime, drawCells,currentStatsUser,currentStatsDivision,selectedDivision]);
+    gameSelectedDivision = selectedDivision;
+    gameDivisionInfo = divisionInfo;
+    gameGamestates = gamestates;}, [paused, ffwd, rewind, realtime, drawCells,currentStatsUser,currentStatsDivision,selectedDivision,divisionInfo,gamestates]);
 
   useEffect(() => {
       gameServerUp = serverUp;
@@ -373,34 +397,45 @@ function App()  {
 
           //Apple
           var appleCoords = gameState.apple.split(' ');
-          if(appleCoords.length > 1)
+          if(appleCoords.length > 1 && gameState.apple!="-1 -1")
           {
+            
             var appleX = parseInt(appleCoords[0]);
             var appleY = parseInt(appleCoords[1]);
-            viewerContext.fillStyle = gameColours.apple;
-            viewerContext.fillRect(startX + appleX*blockSize, startY +  appleY*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+            if(drawAppleImage)
+            {
+              viewerContext.drawImage(appleImg,startX + appleX*blockSize,startY +  appleY*blockSize);
+            }
+            else
+            {
+              viewerContext.fillStyle = gameColours.apple;
+              viewerContext.fillRect(startX + appleX*blockSize, startY +  appleY*blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+            }
           }
 
 
           //Obstacles
           viewerContext.fillStyle = gameColours.obstacles;
-          var obsStartIndex = 1;
+          var obsStartIndex = 0;
           var i;
 
           //Obstacle 0
-          var obsRects = parseCoords(gameState.obstacle0,obsStartIndex);
+          var obsRectsObj = parseCoords(gameState.obstacle0,obsStartIndex);
+          var obsRects = obsRectsObj.rects;
           for (i = 0; i < obsRects.length; i++) {
             viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
           }
 
           //Obstacle 1
-          obsRects = parseCoords(gameState.obstacle1,obsStartIndex);
+          obsRectsObj = parseCoords(gameState.obstacle1,obsStartIndex);
+          obsRects = obsRectsObj.rects;
           for (i = 0; i < obsRects.length; i++) {
             viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
           }
 
           //Obstacle 2
-          obsRects = parseCoords(gameState.obstacle2,obsStartIndex);
+          obsRectsObj = parseCoords(gameState.obstacle2,obsStartIndex);
+          obsRects = obsRectsObj.rects;
           for (i = 0; i < obsRects.length; i++) {
             viewerContext.fillRect(startX + obsRects[i]['startX']*blockSize, startY + obsRects[i]['startY']*blockSize, obsRects[i]['width']*blockSize, obsRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
           }
@@ -408,40 +443,102 @@ function App()  {
 
           //Snakes
           //Snake 0
-          var snakeStartIndex = 4;
+          var snakeStartIndex = 6;
           viewerContext.fillStyle = gameColours.snake0;
 
-          var snakeRects = parseCoords(gameState.snake0,snakeStartIndex);
-          for (i = 0; i < snakeRects.length; i++) {
+          var snakeRectsObj = parseCoords(gameState.snake0,snakeStartIndex);
+          var snakeRects = snakeRectsObj.rects;
+          for (i = 0; i < snakeRects?.length; i++) {
             viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+          }
+          if(snakeRectsObj.head!=null)
+          {
+            viewerContext.fillStyle = gameColours.background;
+            viewerContext.beginPath();
+            viewerContext.arc(startX + snakeRectsObj.head[0]*blockSize+blockSize/3, startY + snakeRectsObj.head[1]*blockSize+blockSize/3, blockSize/3, 0, 2 * Math.PI);
+            viewerContext.fill();
+            viewerContext.closePath();
+
+            viewerContext.fillStyle = gameColours.obstacles;
+            viewerContext.beginPath();
+            viewerContext.arc(startX + snakeRectsObj.head[0]*blockSize+blockSize/3, startY + snakeRectsObj.head[1]*blockSize+blockSize/3, blockSize/4, 0, 2 * Math.PI);
+            viewerContext.fill();
+            viewerContext.closePath();
           }
 
           //Snake 1
           viewerContext.fillStyle = gameColours.snake1;
 
-          snakeRects = parseCoords(gameState.snake1,snakeStartIndex);
-          for (i = 0; i < snakeRects.length; i++) {
+          snakeRectsObj = parseCoords(gameState.snake1,snakeStartIndex);
+          snakeRects = snakeRectsObj.rects;
+          for (i = 0; i < snakeRects?.length; i++) {
             viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
+          }
+          if(snakeRectsObj.head!=null)
+          {
+            viewerContext.fillStyle = gameColours.background;
+            viewerContext.beginPath();
+            viewerContext.arc(startX + snakeRectsObj.head[0]*blockSize+blockSize/3, startY + snakeRectsObj.head[1]*blockSize+blockSize/3, blockSize/3, 0, 2 * Math.PI);
+            viewerContext.fill();
+            viewerContext.closePath();
+
+            viewerContext.fillStyle = gameColours.obstacles;
+            viewerContext.beginPath();
+            viewerContext.arc(startX + snakeRectsObj.head[0]*blockSize+blockSize/3, startY + snakeRectsObj.head[1]*blockSize+blockSize/3, blockSize/4, 0, 2 * Math.PI);
+            viewerContext.fill();
+            viewerContext.closePath();
           }
 
           //Snake 2
           viewerContext.fillStyle = gameColours.snake2;
 
-          snakeRects = parseCoords(gameState.snake2,snakeStartIndex);
-          for (i = 0; i < snakeRects.length; i++) {
+          snakeRectsObj = parseCoords(gameState.snake2,snakeStartIndex);
+          snakeRects = snakeRectsObj.rects;
+          for (i = 0; i < snakeRects?.length; i++) {
             viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
           }
+          if(snakeRectsObj.head!=null)
+          {
+            viewerContext.fillStyle = gameColours.background;
+            viewerContext.beginPath();
+            viewerContext.arc(startX + snakeRectsObj.head[0]*blockSize+blockSize/3, startY + snakeRectsObj.head[1]*blockSize+blockSize/3, blockSize/3, 0, 2 * Math.PI);
+            viewerContext.fill();
+            viewerContext.closePath();
+
+            viewerContext.fillStyle = gameColours.obstacles;
+            viewerContext.beginPath();
+            viewerContext.arc(startX + snakeRectsObj.head[0]*blockSize+blockSize/3, startY + snakeRectsObj.head[1]*blockSize+blockSize/3, blockSize/4, 0, 2 * Math.PI);
+            viewerContext.fill();
+            viewerContext.closePath();
+          }
+
 
           //Snake 3
           viewerContext.fillStyle = gameColours.snake3;
 
-          snakeRects = parseCoords(gameState.snake3,snakeStartIndex);
-          for (i = 0; i < snakeRects.length; i++) {
+          snakeRectsObj = parseCoords(gameState.snake3,snakeStartIndex);
+          snakeRects = snakeRectsObj.rects;
+          for (i = 0; i < snakeRects?.length; i++) {
             viewerContext.fillRect(startX + snakeRects[i]['startX']*blockSize, startY + snakeRects[i]['startY']*blockSize, snakeRects[i]['width']*blockSize, snakeRects[i]['height']*blockSize); //Draws coloured sqaure in viewer
           }
+          if(snakeRectsObj.head!=null)
+          {
+            viewerContext.fillStyle = gameColours.background;
+            viewerContext.beginPath();
+            viewerContext.arc(startX + snakeRectsObj.head[0]*blockSize+blockSize/3, startY + snakeRectsObj.head[1]*blockSize+blockSize/3, blockSize/3, 0, 2 * Math.PI);
+            viewerContext.fill();
+            viewerContext.closePath();
+
+            viewerContext.fillStyle = gameColours.obstacles;
+            viewerContext.beginPath();
+            viewerContext.arc(startX + snakeRectsObj.head[0]*blockSize+blockSize/3, startY + snakeRectsObj.head[1]*blockSize+blockSize/3, blockSize/4, 0, 2 * Math.PI);
+            viewerContext.fill();
+            viewerContext.closePath();
+          }
+          
           if(drawSnakeImage)
           {
-            viewerContext.drawImage(imageObj1,progBar.x+(currentGamestate/config.gameFrames)*(config.game_height*blockSize)-3,progBar.y-2);
+            viewerContext.drawImage(snakeHeadImg,progBar.x+(currentGamestate/config.gameFrames)*(config.game_height*blockSize)-3,progBar.y-2);
           }
       }
     }
@@ -603,9 +700,6 @@ function App()  {
           statsContext.fillText(gameCurrStatsDivision.avg_deaths,startX+ 40*blockSize,startY+20*blockSize);
           statsContext.fillText(gameCurrStatsDivision.avg_time_to_apple,startX+ 40*blockSize,startY+25*blockSize);
         }
-
-
-
       }
     }
 
@@ -638,10 +732,6 @@ function App()  {
 
   }
 
-  function refreshLeaderboardAndDivisions(){
-    //getDivisions();
-    //getPlayers();
-  }
 
   async function cacheGame(gameRef, game){
     window.sessionStorage.clear();
@@ -691,63 +781,7 @@ function App()  {
         setGameRef(prevState=> (prevState+1));
         cacheGame(gameRef, gameStateArr);
         resetGamestate();
-      }
-
-      if(appleX === lastAppleX && appleY === lastAppleY)
-      {
-        appleHealth-=config.decay_rate;
-      }
-      else
-      {
-        appleHealth = 5;
-        lastAppleX = appleX;
-        lastAppleY = appleY;
-      }
-
-      if(appleHealth < -5)
-      {
-        appleX = Math.floor(Math.random() * config.game_width);
-        appleY = Math.floor(Math.random() * config.game_height);
-      }
-
-      realtimeGamestate++;
-
-      appleCol.r = (appleHealth+5) * 25.5;
-      appleCol.g = (appleHealth+5) * 21.5;
-
-      gameColours.apple = 'rgb('+appleCol.r+','+appleCol.g+','+appleCol.b+')';
-      var obs0 = "0 30,21 26,21";
-      var obs1 = "1 47,26 43,26";
-      var obs2 = "2 16,32 16,36";
-
-      if(gameSelectedDivision === "Division 1")
-      {
-        obs0 = "0 28,34 28,31";
-        obs1 = "1 44,26 40,26";
-        obs2 = "2 10,32 6,32";
-      } else if (gameSelectedDivision === "Division 2")
-      {
-        obs0 = "0 21,34 24,34";
-        obs1 = "1 40,18 40,21";
-        obs2 = "2 30,37 27,37";
-      }
-      gameStateArr[realtimeGamestate] =
-      {
-        ref: 0,
-        state: 0,
-        apple: appleX+" "+appleY,
-        obstacle0: obs0,
-        obstacle1: obs1,
-        obstacle2: obs2,
-        snake0: "",
-        snake1: "",
-        snake2: "",
-        snake3: "",
-        snake0Score: 0,
-        snake1Score: 0,
-        snake2Score: 0,
-        snake3Score: 0
-      };
+      }      
 
       /*
       snake0: "0 alive 26 2 9,5 3,5 3,9 17,9",
@@ -781,7 +815,38 @@ function App()  {
     {
       currentGamestate++;
     }
-    gameState = gameStateArr[currentGamestate];
+    if(gameGamestates.count > 0)
+    {
+      gameState = parseGamestate(gameGamestates.states[currentGamestate]["state"],gameGamestates.states[currentGamestate]["index"]);
+    
+      appleX = gameState.apple.split(' ')[0];
+      appleY = gameState.apple.split(' ')[1];
+
+      if(appleX === lastAppleX && appleY === lastAppleY)
+      {
+        appleHealth-=config.decay_rate;
+      }
+      else
+      {
+        appleHealth = 5;
+        lastAppleX = appleX;
+        lastAppleY = appleY;
+      }
+
+      if(appleHealth < -5)
+      {
+        appleX = Math.floor(Math.random() * config.game_width);
+        appleY = Math.floor(Math.random() * config.game_height);
+      }
+
+      realtimeGamestate++;
+
+      appleCol.r = (appleHealth+5) * 25.5;
+      appleCol.g = (appleHealth+5) * 21.5;
+
+      gameColours.apple = 'rgb('+appleCol.r+','+appleCol.g+','+appleCol.b+')';
+    
+    }
   }
 
   function handleUsernameClick(e) {
@@ -798,7 +863,7 @@ function App()  {
 
   function handleDivisionClick(e) {
   setIndex(0);
-  setSelectedDivision("Division "+e);
+  setSelectedDivision(e);
   }
 
   function initVars(){
@@ -811,9 +876,14 @@ function App()  {
   }
 
   const getPlayerData = async () => {
-      const response = await axios.get(PlayerURL)
+      const response = await axios.get(PlayerURL+selectedDivision)
       return response;
   }
+
+  const getGamestatesData = async () => {
+    const response = await axios.get(DivisionGamestatesURL+selectedDivision+"/"+selectedDivision)
+    return response;
+}
 
   const getPlayerStatsData = async () => {
       const response = await axios.get(PlayerStatsURL)
@@ -840,15 +910,15 @@ function App()  {
   const renderTableBody = () => {
     if(serverUp)
     {
-      return players && players.map(({ id, username, score, division }) => {
+      return players && players.map(({ id, name, score, currentGame }) => {
           return (
               <tr key={id}>
-                  <td>{score}</td>
+                  <td>{Math.round(10000*score)/10000}</td>
                   <td className='opration'>
-                      <a className='button' onClick={() =>handleUsernameClick(username)}>{username}</a>
+                      <a className='button' onClick={() =>handleUsernameClick(name)}>{name}</a>
                   </td>
                   <td className='opration'>
-                      <a className='button' onClick={() =>handleDivisionClick(division)}>{division}</a>
+                      <a className='button' onClick={() =>handleDivisionClick(currentGame)}>{currentGame}</a>
                   </td>
               </tr>
           )
@@ -858,20 +928,20 @@ function App()  {
     {
       return (
           <tr key='0'>
-              <td>{"Connecting..."}</td>
-              <td>{"Connecting..."}</td>
-              <td>{"Connecting..."}</td>
+          <td>{"Connecting..."}</td>
+          <td>{"......................."}</td>
+          <td>{"......................."}</td>
           </tr>
       )
     }
   }
 
-  const handleSelect = (selectedIndex, e) => {
+  const handleSelect = (selectedIndex, e) => {//carousel selector
     setIndex(selectedIndex);
   };
 
   function logChange(event){
-         setSelectedDivision(event.target.value);
+         setSelectedDivision(event.target.value.split(" ")[1]);
          resetGamestate();
      };
 
@@ -906,7 +976,7 @@ function App()  {
     <header>
         <nav>
             <div className="logo">
-                <h4>runtime</h4>
+                <h4>Runtime</h4>
                 <h4 onClick={() => setServerUp(prevState => !prevState)}>Terror</h4>
             </div>
             <ul className="nav-links">

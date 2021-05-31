@@ -10,6 +10,7 @@ function parseCoords(corrdsString, startIndex)
   }
 
   var oldPos = coordsArr[startIndex].split(',');
+  var headPos = oldPos;
   var i;
   for (i = startIndex+1; i < coordsArr.length; i++) {
     var newPos = coordsArr[i].split(',');
@@ -52,6 +53,6 @@ function parseCoords(corrdsString, startIndex)
 
     oldPos = newPos;
   }
-  return rectsArr;
+  return {head:headPos, rects:rectsArr};
 }
 module.exports = parseCoords;
