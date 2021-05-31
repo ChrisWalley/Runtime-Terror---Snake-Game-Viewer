@@ -1,7 +1,7 @@
 [
   {
     "id": 0,
-    "username": "ChrisWalley",
+    "username": "Medium",
     "max_length": "35",
     "avg_length": "30",
     "no_of_kills":"40",
@@ -9,7 +9,7 @@
   },
   {
     "id": 1,
-    "username": "Danny-dude",
+    "username": "Easy",
     "max_length": "33",
     "avg_length": "29",
     "no_of_kills":"35",
@@ -17,7 +17,7 @@
   },
   {
     "id": 2,
-    "username": "Siyabongajuju",
+    "username": "VeryEasy",
     "max_length": "30",
     "avg_length": "28",
     "no_of_kills":"33",
@@ -25,7 +25,7 @@
   },
   {
     "id": 3,
-    "username": "TalhaSalmanMinhas",
+    "username": "Random",
     "max_length": "28",
     "avg_length": "25",
     "no_of_kills":"32",
@@ -41,7 +41,7 @@
   },
   {
     "id": 5,
-    "username": "campbell184",
+    "username": "Steve_James",
     "max_length": "23",
     "avg_length": "20",
     "no_of_kills":"24",
