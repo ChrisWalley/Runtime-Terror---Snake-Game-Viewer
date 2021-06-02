@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import axios from 'axios';
 import Carousel from 'react-bootstrap/Carousel';
 
-const PlayerURL = 'https://marker.ms.wits.ac.za/snake/agents/'
+const PlayerURL = 'https://marker.ms.wits.ac.za/snake/agents/0'
 const PlayerStatsURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Stats.json'
-const DivisionURL = 'https://marker.ms.wits.ac.za/snake/leagues'
+const DivisionURL = 'https://marker.ms.wits.ac.za/snake/games/0/count'
 const DivisionStatsURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/DivisionStats.json'
-const DivisionGamestatesURL = 'https://marker.ms.wits.ac.za/snake/games/'
+const DivisionGamestatesURL = 'https://marker.ms.wits.ac.za/snake/games/0/'
 
 const parseCoords = require('./parseCoords');
 const parseGamestate = require('./parseGamestate');
@@ -137,6 +137,7 @@ var gameRealtime = true;
 var gameDrawCells = false;
 var gameServerUp = false;
 var gameSelectedDivision = 0;
+var gameSelectedDivisionStr = "Division 0";
 var gameGamestates = { count: 0, states: new Array(0) };
 
 function App() {
@@ -159,6 +160,7 @@ function App() {
   const [index, setIndex] = useState(0);
   const [serverUp, setServerUp] = useState(gameServerUp);
   const [selectedDivision, setSelectedDivision] = useState(gameSelectedDivision);
+  const [selectedDivisionStr, setSelectedDivisionStr] = useState(gameSelectedDivisionStr);
   const [isGameCached, setIsGameCached] = useState(false);
   const [readEntireGame, setReadEntireGame] = useState(false);
 
@@ -242,7 +244,6 @@ function App() {
       {
         setServerUp(true);
         var n = response.data["count"];
-        console.log("Div " + selectedDivision);
         var divNames = new Array(n)
         for (var i = 0; i < n; i++) {
           divNames[i] = { id: i, division: "Division " + i };
@@ -262,8 +263,11 @@ function App() {
     })
 
     getGamestatesData().then(response => {
-      console.log(response.data);
-      if (isMounted) setGamestates(response.data);    // add conditional check
+      if (isMounted) 
+      {
+        setGamestates(response.data);    // add conditional check
+        currentGamestate = 0;
+      }
     })
 
     getPlayerStatsData().then(response => {
@@ -303,9 +307,10 @@ function App() {
     gameCurrStatsUser = currentStatsUser;
     gameCurrStatsDivision = currentStatsDivision;
     gameSelectedDivision = selectedDivision;
+    gameSelectedDivisionStr = selectedDivisionStr;
     gameDivisionInfo = divisionInfo;
     gameGamestates = gamestates;
-  }, [paused, ffwd, rewind, realtime, drawCells, currentStatsUser, currentStatsDivision, selectedDivision, divisionInfo, gamestates]);
+  }, [paused, ffwd, rewind, realtime, drawCells, currentStatsUser, currentStatsDivision, selectedDivision,selectedDivisionStr, divisionInfo, gamestates]);
 
   useEffect(() => {
     gameServerUp = serverUp;
@@ -784,7 +789,6 @@ function App() {
       }
     }
     if (gameGamestates.count > 0) {
-      console.log(gameGamestates);
       gameState = parseGamestate(gameGamestates.states[currentGamestate]["state"], gameGamestates.states[currentGamestate]["index"]);
 
       appleX = gameState.apple.split(' ')[0];
@@ -842,6 +846,7 @@ function App() {
   function handleDivisionClick(e) {
     setIndex(0);
     setSelectedDivision(e);
+    setSelectedDivisionStr("Division "+e);
   }
 
   function initVars() {
@@ -854,12 +859,12 @@ function App() {
   }
 
   const getPlayerData = async () => {
-    const response = await axios.get(PlayerURL + selectedDivision)
+    const response = await axios.get(PlayerURL)
     return response;
   }
 
   const getGamestatesData = async () => {
-    const response = await axios.get(DivisionGamestatesURL + selectedDivision + "/" + selectedDivision)
+    const response = await axios.get(DivisionGamestatesURL + selectedDivision)
     return response;
   }
 
@@ -918,7 +923,7 @@ function App() {
 
   function logChange(event) {
     setSelectedDivision(event.target.value.split(" ")[1]);
-    resetGamestate();
+    setSelectedDivisionStr(event.target.value);
   };
 
   const renderDivisionSelect = () => {
@@ -926,7 +931,7 @@ function App() {
       return (
         <div>
           {['division'].map(key => (
-            <select key={key} value={selectedDivision} onChange={logChange}>
+            <select key={key} value={selectedDivisionStr} onChange={logChange}>
               {divisions.map(({ [key]: value }) => <option key={value}>{value}</option>)}
             </select>
           ))}
