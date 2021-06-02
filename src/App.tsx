@@ -1066,7 +1066,7 @@ function App() {
             </tbody>
           </table>
           <div style={{ visibility: "collapse" }} id="hiddenButtons" className="buttons">
-            <button onClick={() => { handleUsernameClick("1"); handleDivisionClick("1"); }}>
+            <button onClick={() => { handleUsernameClick("1"); handleDivisionClick(1); }}>
               {<i>triggerClickFunctions</i>}
             </button>
           </div>
@@ -1084,7 +1084,7 @@ function App() {
           <button onClick={() => { addFakeUserForStats(); drawStats(); addFakeDivisionForStats(); drawStats(); }}>
             {<i>triggerDrawStats</i>}
           </button>
-          <button onClick={() => { handleUsernameClick('ChrisWalley'); handleDivisionClick('Division 0') }}>
+          <button onClick={() => { handleUsernameClick('Easy'); handleDivisionClick(0) }}>
             {<i>triggerStatsUser</i>}
           </button>
           <button onClick={() => { handleDivisionStatsClick(1); }}>

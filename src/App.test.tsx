@@ -49,6 +49,8 @@ test('Test buttons', () => {
   fireEvent.click(linkElementBtntriggerLogicUpdate);
 });
 
+
+
 test('Test leaderboard interaction', () => {
   act(() => {
     render(<App />);
@@ -60,16 +62,19 @@ test('Test leaderboard interaction', () => {
 
   const linkElementBtntriggerDrawStats = screen.getByText(/triggerDrawStats/i);
   fireEvent.click(linkElementBtntriggerDrawStats);
+  
 
   const linkElementBtntriggerStatsUser = screen.getByText(/triggerStatsUser/i);
   fireEvent.click(linkElementBtntriggerStatsUser);
+  
 
-
+  
   const linkElementBtntriggerStatsDivisionButton = screen.getByText(/triggerStatsDivisionFromSelect/i);
   fireEvent.click(linkElementBtntriggerStatsDivisionButton);
 
 
 });
+
 
 test('Test header links', () => {
   act(() => {
@@ -91,6 +96,33 @@ test('Test header links', () => {
   const linkElementHelp = screen.getByText(/Help/i);
   expect(linkElementHelp).toBeInTheDocument();
 });
+
+
+test('Test other functions', () => {
+  act(() => {
+    render(<App />);
+  });
+
+  const linkElementBtntriggerMiscFunctions = screen.getByText(/triggerMiscFunctions/i);
+  fireEvent.click(linkElementBtntriggerMiscFunctions);
+
+  const linkElementBtntriggerDrawGameboard = screen.getByText(/triggerDrawGameboard/i);
+  fireEvent.click(linkElementBtntriggerDrawGameboard);
+  
+  const linkElementBtntriggerDrawStats = screen.getByText(/triggerDrawStats/i);
+  fireEvent.click(linkElementBtntriggerDrawStats);
+
+  const linkElementTerror = screen.getByText(/Terror/i);
+  expect(linkElementTerror).toBeInTheDocument();
+  fireEvent.click(linkElementTerror);
+
+  fireEvent.click(linkElementBtntriggerMiscFunctions);
+  fireEvent.click(linkElementBtntriggerDrawGameboard);
+  fireEvent.click(linkElementBtntriggerDrawStats);
+
+});
+
+
 /*
 test('Tests parsing coordinates - Object', () => {
   expect(parseCoords("0 1,1 1,2 2,2 2,3 3,3", 1)[0]['startX']).toBe(1);
@@ -104,27 +136,3 @@ test('Tests parsing coordinates - Empty', () => {
   expect(parseCoords("", 1).length).toBe(0);
 });
 */
-
-test('Test other functions', () => {
-  act(() => {
-    render(<App />);
-  });
-
-  const linkElementBtntriggerMiscFunctions = screen.getByText(/triggerMiscFunctions/i);
-  fireEvent.click(linkElementBtntriggerMiscFunctions);
-
-  const linkElementBtntriggerDrawGameboard = screen.getByText(/triggerDrawGameboard/i);
-  fireEvent.click(linkElementBtntriggerDrawGameboard);
-
-  const linkElementBtntriggerDrawStats = screen.getByText(/triggerDrawStats/i);
-  fireEvent.click(linkElementBtntriggerDrawStats);
-
-  const linkElementTerror = screen.getByText(/Terror/i);
-  expect(linkElementTerror).toBeInTheDocument();
-  fireEvent.click(linkElementTerror);
-
-  fireEvent.click(linkElementBtntriggerMiscFunctions);
-  fireEvent.click(linkElementBtntriggerDrawGameboard);
-  fireEvent.click(linkElementBtntriggerDrawStats);
-
-});
