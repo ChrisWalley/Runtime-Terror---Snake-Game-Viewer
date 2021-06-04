@@ -142,10 +142,12 @@ var gameSelectedDivision = "Division 0";
 function App()  {
 
   const viewerRef = React.useRef<HTMLCanvasElement>(null);
+  const leftRef = React.useRef<HTMLCanvasElement>(null);
   const statsRef = React.useRef<HTMLCanvasElement>(null);
   const serverDownRef = React.useRef<HTMLCanvasElement>(null);
   const serverDownRef2 = React.useRef<HTMLCanvasElement>(null);
   const [viewerContext, setViewerContext] = React.useState<CanvasRenderingContext2D | null>(null);
+  const [leftContext, setleftContext] = React.useState<CanvasRenderingContext2D | null>(null);
   const [statsContext, setStatsContext] = React.useState<CanvasRenderingContext2D | null>(null);
   const [serverDownContext, setServerDownContext] = React.useState<CanvasRenderingContext2D | null>(null);
   const [serverDownContext2, setServerDownContext2] = React.useState<CanvasRenderingContext2D | null>(null);
@@ -182,6 +184,23 @@ function App()  {
       if (viewerContext)
       {
         drawGameboard();}}, [viewerContext]);
+
+
+        useEffect(() => {
+
+            if (leftRef.current) {
+              const renderCtx1 = leftRef.current.getContext('2d');
+
+              if (renderCtx1) {
+                setleftContext(renderCtx1);
+              }
+            }
+
+            if (leftContext)
+            {
+              drawLeft();}}, [leftContext]);
+
+
 
   useEffect(() => {
 
@@ -612,6 +631,39 @@ function App()  {
     requestAnimationFrame(drawStats);
   }
 
+  //
+  function drawLeft() {
+    if(gameServerUp)
+    {
+      if(leftContext)
+      {
+
+        leftContext.fillStyle = gameColours.background;     //Clears area
+        leftContext.fillRect(0,0, canvasWidth-200, canvasHeight-200);
+        leftContext.fillRect(startX,startY + config.game_width*blockSize + 20, config.game_height*blockSize, 10);
+
+
+
+        leftContext.font = "30px Verdana";
+
+        leftContext.fillStyle = gameColours.obstacles;
+
+        leftContext.fillText("Snake1:",startX+ 5*blockSize,startY+15*blockSize);
+        leftContext.fillText("Snake2:",startX+ 5*blockSize,startY+20*blockSize);
+        leftContext.fillText("Snake3:",startX+ 5*blockSize,startY+25*blockSize);
+        leftContext.fillText("Snake4:",startX+ 5*blockSize,startY+30*blockSize);
+
+
+
+
+
+      }
+    }
+
+    requestAnimationFrame(drawLeft);
+  }
+//
+
   function getConfig() {
 
     config =
@@ -920,13 +972,17 @@ function App()  {
     </header>
     <div className="row">
         <div className="column left">
-          <h2>Division</h2>
-            {renderDivisionSelect()}
-          <div>
-            <button onClick={()=>handleDivisionStatsClick(1)}>
-              Stats
-            </button>
-          </div>
+        <h1>Current Game Info</h1>
+        <canvas
+         ref={leftRef}
+         width={canvasWidth-150}
+         height={canvasHeight-150}
+         style={{
+           border: '2px solid #000',
+           marginTop: 10,
+           marginBottom: 10
+         }}
+       ></canvas>
         </div>
 
         <div className="column middle">
@@ -1010,6 +1066,15 @@ function App()  {
 
          </div>
         <div className="column right" style={{float: 'right'}}>
+        <h1>Division</h1>
+          {renderDivisionSelect()}
+        <div>
+          <button onClick={()=>handleDivisionStatsClick(1)}>
+            Statistics
+          </button>
+        </div>
+        <p> </p>
+        <p>  </p>
           <h1 id='title'>Leaderboard</h1>
           <table id='player'>
               <thead>
