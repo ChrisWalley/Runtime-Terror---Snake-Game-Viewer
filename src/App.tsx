@@ -17,8 +17,14 @@
   const startX = 10;
   const startY = 10;
 
-  var drawSnakeImage = true;
-  var drawAppleImage = true;
+  var snakeHeadImg = new Image();
+  
+
+  let appleImagesArr = {};
+
+  var loadedSnakeImage = false;
+  var loadedAllAppleImages = false;
+  var loadedAppleImagesCounter = 0;
 
   var loadingBarSnake =
   {
@@ -123,11 +129,8 @@
     height: 0
   };
 
-  var snakeHeadImg = new Image();
-  snakeHeadImg.src = 'https://www.walleyco.de/snake.png'
+  
 
-  var appleImg = new Image();
-  appleImg.src = 'https://www.walleyco.de/apple.png'
 
   var gamePaused = false;
   var gameFfwd = false;
@@ -243,12 +246,10 @@
     }, [serverDownContext2]);
 
     useEffect(() => {
+      loadImages();
       initVars();
       getConfig();
-      setInterval(updateGameState, config.game_speed);
-    }, []);
 
-    useEffect(() => {
       let isMounted = true;               // note mutable flag
       getDivisionData().then(response => {
         if (isMounted)// add conditional check
@@ -262,8 +263,14 @@
           setDivisions(divNames);
         }
       })
-
+      setInterval(updateGameState, config.game_speed);
       return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
+
+
+    }, []);
+
+    useEffect(() => {
+      
     }, []);
 
     useEffect(() => {
@@ -408,8 +415,9 @@
 
             var appleX = parseInt(appleCoords[0]);
             var appleY = parseInt(appleCoords[1]);
-            if (drawAppleImage) {
-              viewerContext.drawImage(appleImg, startX + appleX * blockSize - blockSize / 2, startY + appleY * blockSize - blockSize / 2);
+            if (loadedAllAppleImages) {
+              var appleIndex = Math.ceil(6-appleHealth);
+              viewerContext.drawImage(appleImagesArr[appleIndex], startX + appleX * blockSize - blockSize / 2, startY + appleY * blockSize - blockSize / 2);
             }
             else {
               viewerContext.fillStyle = gameColours.apple;
@@ -546,7 +554,7 @@
             viewerContext.fillText(""+gamestateMulti+"x", startX + 15, startY + 25);
           }
 
-          if (drawSnakeImage) {
+          if (loadedSnakeImage) {
             viewerContext.drawImage(snakeHeadImg, progBar.x + (currentGamestate / config.gameFrames) * (config.game_height * blockSize) - 3, progBar.y - 2);
           }
         }
@@ -905,6 +913,31 @@
       gameServerUp = serverUp;
     }
 
+    function loadImages()
+    {
+      snakeHeadImg.src = '/assets/snake.png'
+      snakeHeadImg.onload = (event) => {
+        loadedSnakeImage = true;
+        }
+
+      var appleImg = new Image();
+      appleImg.src = '/assets/apple.png'
+      var counter = 0;
+      for(var i = 1; i <= 10; i ++)
+      {
+        appleImagesArr[i] = new Image();
+        appleImagesArr[i].src = '/assets/apples/apple_'+i+'.png';
+        appleImagesArr[i].onload = (event) => {
+          loadedAppleImagesCounter += Math.pow(10,counter);
+          counter++;
+          if(loadedAppleImagesCounter===1111111111)
+            {
+              loadedAllAppleImages = true;
+            }
+          }
+      }
+    }
+
     const getPlayerData = async () => {
       const response = await axios.get(PlayerURL)
       return response;
@@ -1152,7 +1185,7 @@
             <button onClick={() => { resetGamestate(); cacheGame(1, 1); }}>
               {<i>triggerMiscFunctions</i>}
             </button>
-            <button onClick={() => { drawSnakeImage = false; updateGameState(); drawGameboard(); loadingBarSnake.count = 8; drawServerDown(); }}>
+            <button onClick={() => { loadedSnakeImage = false; updateGameState(); drawGameboard(); loadingBarSnake.count = 8; drawServerDown(); }}>
               {<i>triggerDrawGameboard</i>}
             </button>
             <button onClick={() => { addFakeUserForStats(); drawStats(); addFakeDivisionForStats(); drawStats(); }}>
