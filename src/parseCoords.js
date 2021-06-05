@@ -10,6 +10,7 @@ function parseCoords(corrdsString, startIndex)
   }
 
   var oldPos = coordsArr[startIndex].split(',');
+  var headPos = oldPos;
   var i;
   for (i = startIndex+1; i < coordsArr.length; i++) {
     var newPos = coordsArr[i].split(',');
@@ -18,6 +19,7 @@ function parseCoords(corrdsString, startIndex)
     var width;
     var height;
 
+//parsing coords on x and y plain
 //15,12 15,7 5,7
     if(parseInt(oldPos[0]) < parseInt(newPos[0]))//X position and width
     {
@@ -52,6 +54,6 @@ function parseCoords(corrdsString, startIndex)
 
     oldPos = newPos;
   }
-  return rectsArr;
+  return {head:headPos, rects:rectsArr};
 }
 module.exports = parseCoords;
