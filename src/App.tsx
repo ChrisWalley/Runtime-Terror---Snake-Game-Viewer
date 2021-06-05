@@ -639,7 +639,7 @@ function App()  {
       {
 
         leftContext.fillStyle = gameColours.background;     //Clears area
-        leftContext.fillRect(0,0, canvasWidth-200, canvasHeight-200);
+        leftContext.fillRect(0,0, canvasWidth-150, canvasHeight-150);
         leftContext.fillRect(startX,startY + config.game_width*blockSize + 20, config.game_height*blockSize, 10);
 
 
