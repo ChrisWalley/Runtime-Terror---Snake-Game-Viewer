@@ -441,6 +441,10 @@
               {
                 appleIndex=10;
               }
+              if(appleIndex < 1)
+              {
+                appleIndex=1;
+              }
               viewerContext.drawImage(appleImagesArr[appleIndex], startX + appleX * blockSize - blockSize / 3, startY + appleY * blockSize - blockSize / 3);
             }
             else {
@@ -1043,7 +1047,7 @@
             currentGamestate = 0;
           }
         }
-      }
+      
       
       if (gameGamestates.count > 0) {
         if(!gameGamestates.states[currentGamestate] || gameGamestates.states[currentGamestate]===null)
@@ -1060,6 +1064,11 @@
 
         if (appleX === lastAppleX && appleY === lastAppleY) {
           appleHealth -= config.decay_rate;
+          appleHealth -= 1.0*gamestateMulti*config.decay_rate;
+          if(appleHealth < -5 && gamestateMulti<0)
+          {
+            appleHealth += 10; 
+          }
         }
         else {
           appleHealth = 5;
@@ -1093,6 +1102,7 @@
         gameColours.apple = 'rgb(' + appleCol.r + ',' + appleCol.g + ',' + appleCol.b + ')';
 
       }
+    }
     }
     }
 
