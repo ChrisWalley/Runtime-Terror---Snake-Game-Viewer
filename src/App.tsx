@@ -10,12 +10,12 @@
 
   const parseCoords = require('./parseCoords');
   const parseGamestate = require('./parseGamestate');
-  const canvasHeight = 550;
-  const canvasWidth = 520;
+  const canvasHeight = 500;
+  const canvasWidth = 470;
 
-  const blockSize = 10;
-  const startX = 10;
-  const startY = 10;
+  const blockSize = 9;
+  const startX = blockSize;
+  const startY = blockSize;
 
   var snakeHeadImg = new Image();
   
@@ -437,6 +437,10 @@
             var appleY = parseInt(appleCoords[1]);
             if (loadedAllAppleImages) {
               var appleIndex = Math.ceil(6-appleHealth);
+              if(appleIndex > 10)
+              {
+                appleIndex=10;
+              }
               viewerContext.drawImage(appleImagesArr[appleIndex], startX + appleX * blockSize - blockSize / 3, startY + appleY * blockSize - blockSize / 3);
             }
             else {
@@ -740,24 +744,16 @@
       {
 
         leftContext.fillStyle = gameColours.background;     //Clears area
-        leftContext.fillRect(0,0, canvasWidth-150, canvasHeight-150);
-        leftContext.fillRect(startX,startY + config.game_width*blockSize + 20, config.game_height*blockSize, 10);
+        leftContext.fillRect(0,0, canvasWidth-150, canvasHeight-200);
 
-
-
-        leftContext.font = "30px Verdana";
+        leftContext.font = "17px Verdana";
 
         leftContext.fillStyle = gameColours.obstacles;
 
-        leftContext.fillText("Snake1:",startX+ 5*blockSize,startY+15*blockSize);
-        leftContext.fillText("Snake2:",startX+ 5*blockSize,startY+20*blockSize);
-        leftContext.fillText("Snake3:",startX+ 5*blockSize,startY+25*blockSize);
-        leftContext.fillText("Snake4:",startX+ 5*blockSize,startY+30*blockSize);
-
-
-
-
-
+        leftContext.fillText("Max",startX+ 0*blockSize,startY+3*blockSize);
+        leftContext.fillText("Now",startX+ 7*blockSize,startY+3*blockSize);
+        leftContext.fillText("Kills",startX+ 14*blockSize,startY+3*blockSize);
+        leftContext.fillText("Name",startX+ 21*blockSize,startY+3*blockSize);
       }
     }
 
@@ -1103,21 +1099,21 @@
     </header>
     <div className="row">
         <div className="column left">
-        <h1>Current Game Info</h1>
         <canvas
          ref={leftRef}
          width={canvasWidth-150}
-         height={canvasHeight-150}
+         height={canvasHeight-200}
          style={{
            border: '2px solid #000',
-           marginTop: 10,
+           marginTop: 75,
+           marginLeft: 10,
            marginBottom: 10
          }}
        ></canvas>
         </div>
           <div className="column middle">
             <div className="custom_carousel_main">
-              <Carousel activeIndex={index} onSelect={handleSelect} controls={false} indicators={false} interval={null} wrap={false}>
+              <Carousel activeIndex={index} onSelect={handleSelect} controls={true} indicators={false} interval={null} wrap={true}>
                 <Carousel.Item>
                   <div>
                     <h2 className="centered" style={{
@@ -1145,39 +1141,6 @@
                         }}
                       ></canvas>}
                     </div>
-                  </div>
-                  <div style={{ visibility: (index === 0 && serverUp) ? "visible" : "hidden" }} id="viewerTimeControls" className="buttonscenteredRow">
-                    <button onClick={() => { gamestateMulti = 1; setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); currentGamestate = startedViewingGamestate }}><i className="material-icons">skip_previous</i></button>
-                    <button onClick={() => { if(rewind)
-                      {
-                        gamestateMulti *=2;
-                        if(gamestateMulti <=-16)
-                        {
-                          gamestateMulti = 1;
-                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); 
-                        }
-                      }else{
-                        gamestateMulti = -2;
-                        setPaused(false); setRewind(true); setFfwd(false); setRealtime(false); 
-                      }}}><i className="material-icons">fast_rewind</i></button>
-                    <button onClick={() => {gamestateMulti = 1; setPaused(prevState => !prevState); setRewind(false); setFfwd(false); setRealtime(false); }}><i className="material-icons">{paused ? "play_circle_outline" : "pause_circle_outline"}</i></button>
-                    <button onClick={() => {if(ffwd)
-                      {
-                        gamestateMulti *=2;
-                        if(gamestateMulti >=16)
-                        {
-                          gamestateMulti = 1;
-                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); 
-                        }
-                      }else{
-                        gamestateMulti = 2;
-                        setPaused(false); setRewind(false); setFfwd(true); setRealtime(false);
-                      }}}><i className="material-icons">fast_forward</i></button>
-                    <button style={{ visibility: (realtime || (index !== 0)) ? "hidden" : "visible" }} onClick={() => { gamestateMulti = 1;setPaused(false); setRewind(false); setFfwd(false); setRealtime(true); currentGamestate = realtimeGamestate }}>{<i className="material-icons">skip_next</i>}</button>
-                  </div>
-                  <div style={{ visibility: (index === 0 && serverUp) ? "visible" : "hidden" }} id="viewerLookControls" className="buttonscenteredSingle">
-                    <button onClick={() => { setDrawCells(prevState => !prevState) }}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
-                    <button style={{ visibility: (index === 0 && serverUp && isGameCached) ? "visible" : "collapse" }} onClick={() => { setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); currentGamestate = startedViewingGamestate; }}><i className="material-icons">settings_backup_restore</i></button>
                   </div>
                 </Carousel.Item>
                 <Carousel.Item>
@@ -1213,6 +1176,39 @@
 
                 </Carousel.Item>
               </Carousel>
+              <div style={{ visibility: (index === 0 && serverUp) ? "visible" : "hidden" }} id="viewerTimeControls" className="buttonscenteredRow">
+                    <button onClick={() => { gamestateMulti = 1; setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); currentGamestate = startedViewingGamestate }}><i className="material-icons">skip_previous</i></button>
+                    <button onClick={() => { if(rewind)
+                      {
+                        gamestateMulti *=2;
+                        if(gamestateMulti <=-16)
+                        {
+                          gamestateMulti = 1;
+                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); 
+                        }
+                      }else{
+                        gamestateMulti = -2;
+                        setPaused(false); setRewind(true); setFfwd(false); setRealtime(false); 
+                      }}}><i className="material-icons">fast_rewind</i></button>
+                    <button onClick={() => {gamestateMulti = 1; setPaused(prevState => !prevState); setRewind(false); setFfwd(false); setRealtime(false); }}><i className="material-icons">{paused ? "play_circle_outline" : "pause_circle_outline"}</i></button>
+                    <button onClick={() => {if(ffwd)
+                      {
+                        gamestateMulti *=2;
+                        if(gamestateMulti >=16)
+                        {
+                          gamestateMulti = 1;
+                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); 
+                        }
+                      }else{
+                        gamestateMulti = 2;
+                        setPaused(false); setRewind(false); setFfwd(true); setRealtime(false);
+                      }}}><i className="material-icons">fast_forward</i></button>
+                    <button style={{ visibility: (realtime || (index !== 0)) ? "hidden" : "visible" }} onClick={() => { gamestateMulti = 1;setPaused(false); setRewind(false); setFfwd(false); setRealtime(true); currentGamestate = realtimeGamestate }}>{<i className="material-icons">skip_next</i>}</button>
+                  </div>
+                  <div style={{ visibility: (index === 0 && serverUp) ? "visible" : "hidden" }} id="viewerLookControls" className="buttonscenteredSingle">
+                    <button onClick={() => { setDrawCells(prevState => !prevState) }}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
+                    <button style={{ visibility: (index === 0 && serverUp && isGameCached) ? "visible" : "collapse" }} onClick={() => { setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); currentGamestate = startedViewingGamestate; }}><i className="material-icons">settings_backup_restore</i></button>
+                  </div>
             </div>
 
 
