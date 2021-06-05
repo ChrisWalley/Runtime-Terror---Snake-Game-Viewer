@@ -1063,7 +1063,6 @@
         appleY = gameState.apple.split(' ')[1];
 
         if (appleX === lastAppleX && appleY === lastAppleY) {
-          appleHealth -= config.decay_rate;
           appleHealth -= 1.0*gamestateMulti*config.decay_rate;
           if(appleHealth < -5 && gamestateMulti<0)
           {
