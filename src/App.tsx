@@ -417,11 +417,11 @@
             var appleY = parseInt(appleCoords[1]);
             if (loadedAllAppleImages) {
               var appleIndex = Math.ceil(6-appleHealth);
-              viewerContext.drawImage(appleImagesArr[appleIndex], startX + appleX * blockSize - blockSize / 2, startY + appleY * blockSize - blockSize / 2);
+              viewerContext.drawImage(appleImagesArr[appleIndex], startX + appleX * blockSize - blockSize / 3, startY + appleY * blockSize - blockSize / 3);
             }
             else {
               viewerContext.fillStyle = gameColours.apple;
-              viewerContext.fillRect(startX + appleX * blockSize, startY + appleY * blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
+              viewerContext.fillRect(startX + (appleX+1) * blockSize, startY + appleY * blockSize, blockSize, blockSize); //Draws coloured sqaure in viewer
             }
           }
 
