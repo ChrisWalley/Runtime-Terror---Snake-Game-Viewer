@@ -10,12 +10,12 @@
 
   const parseCoords = require('./parseCoords');
   const parseGamestate = require('./parseGamestate');
-  const canvasHeight = 550;
-  const canvasWidth = 520;
+  const canvasHeight = 500;
+  const canvasWidth = 470;
 
-  const blockSize = 10;
-  const startX = 10;
-  const startY = 10;
+  const blockSize = 9;
+  const startX = blockSize;
+  const startY = blockSize;
 
   var snakeHeadImg = new Image();
   
@@ -150,10 +150,12 @@
   function App() {
 
     const viewerRef = React.useRef<HTMLCanvasElement>(null);
+    const scoreboardRef = React.useRef<HTMLCanvasElement>(null);
     const statsRef = React.useRef<HTMLCanvasElement>(null);
     const serverDownRef = React.useRef<HTMLCanvasElement>(null);
     const serverDownRef2 = React.useRef<HTMLCanvasElement>(null);
     const [viewerContext, setViewerContext] = React.useState<CanvasRenderingContext2D | null>(null);
+    const [scoreboardContext, setScoreboardContext] = React.useState<CanvasRenderingContext2D | null>(null);
     const [statsContext, setStatsContext] = React.useState<CanvasRenderingContext2D | null>(null);
     const [serverDownContext, setServerDownContext] = React.useState<CanvasRenderingContext2D | null>(null);
     const [serverDownContext2, setServerDownContext2] = React.useState<CanvasRenderingContext2D | null>(null);
@@ -203,7 +205,25 @@
       }
     }, [viewerContext]);
 
-    useEffect(() => {
+
+        useEffect(() => {
+
+            if (scoreboardRef.current) {
+              const renderCtx1 = scoreboardRef.current.getContext('2d');
+
+              if (renderCtx1) {
+                setScoreboardContext(renderCtx1);
+              }
+            }
+
+            if (scoreboardContext)
+            {
+              drawScoreboard();}
+            }, [scoreboardContext]);
+
+
+
+  useEffect(() => {
 
       if (statsRef.current) {
         const statsRenderContext = statsRef.current.getContext('2d');
@@ -417,6 +437,10 @@
             var appleY = parseInt(appleCoords[1]);
             if (loadedAllAppleImages) {
               var appleIndex = Math.ceil(6-appleHealth);
+              if(appleIndex > 10)
+              {
+                appleIndex=10;
+              }
               viewerContext.drawImage(appleImagesArr[appleIndex], startX + appleX * blockSize - blockSize / 3, startY + appleY * blockSize - blockSize / 3);
             }
             else {
@@ -458,7 +482,7 @@
           var snakeStartIndex = 6;
           viewerContext.fillStyle = gameColours.snake0;
 
-          var snakeRectsObj = parseCoords(gameState.snake0, snakeStartIndex);
+          var snakeRectsObj = parseCoords(gameState.snake0.coords, snakeStartIndex);
           var snakeRects = snakeRectsObj.rects;
           for (i = 0; i < snakeRects?.length; i++) {
             viewerContext.fillRect(startX + snakeRects[i]['startX'] * blockSize, startY + snakeRects[i]['startY'] * blockSize, snakeRects[i]['width'] * blockSize, snakeRects[i]['height'] * blockSize); //Draws coloured sqaure in viewer
@@ -480,7 +504,7 @@
           //Snake 1
           viewerContext.fillStyle = gameColours.snake1;
 
-          snakeRectsObj = parseCoords(gameState.snake1, snakeStartIndex);
+          snakeRectsObj = parseCoords(gameState.snake1.coords, snakeStartIndex);
           snakeRects = snakeRectsObj.rects;
           for (i = 0; i < snakeRects?.length; i++) {
             viewerContext.fillRect(startX + snakeRects[i]['startX'] * blockSize, startY + snakeRects[i]['startY'] * blockSize, snakeRects[i]['width'] * blockSize, snakeRects[i]['height'] * blockSize); //Draws coloured sqaure in viewer
@@ -502,7 +526,7 @@
           //Snake 2
           viewerContext.fillStyle = gameColours.snake2;
 
-          snakeRectsObj = parseCoords(gameState.snake2, snakeStartIndex);
+          snakeRectsObj = parseCoords(gameState.snake2.coords, snakeStartIndex);
           snakeRects = snakeRectsObj.rects;
           for (i = 0; i < snakeRects?.length; i++) {
             viewerContext.fillRect(startX + snakeRects[i]['startX'] * blockSize, startY + snakeRects[i]['startY'] * blockSize, snakeRects[i]['width'] * blockSize, snakeRects[i]['height'] * blockSize); //Draws coloured sqaure in viewer
@@ -525,7 +549,7 @@
           //Snake 3
           viewerContext.fillStyle = gameColours.snake3;
 
-          snakeRectsObj = parseCoords(gameState.snake3, snakeStartIndex);
+          snakeRectsObj = parseCoords(gameState.snake3.coords, snakeStartIndex);
           snakeRects = snakeRectsObj.rects;
           for (i = 0; i < snakeRects?.length; i++) {
             viewerContext.fillRect(startX + snakeRects[i]['startX'] * blockSize, startY + snakeRects[i]['startY'] * blockSize, snakeRects[i]['width'] * blockSize, snakeRects[i]['height'] * blockSize); //Draws coloured sqaure in viewer
@@ -712,7 +736,193 @@
       requestAnimationFrame(drawStats);
     }
 
-    function getConfig() {
+    function sortSnakes(snakeA,snakeB,snakeC,snakeD)
+    {
+      var low1;
+      var high1;
+      var low2;
+      var high2;
+      var lowest;
+      var middle1;
+      var middle2;
+      var highest;
+
+      if (betterThan(snakeB, snakeA))
+      {
+        low1 = snakeA;
+        high1 = snakeB;
+      }
+      else 
+      {
+        low1 = snakeB;
+        high1 = snakeA;
+      }
+  
+      if (betterThan(snakeD, snakeC))
+      {
+        low2 = snakeC;
+        high2 = snakeD
+      }
+      else
+      {
+        low2 = snakeD;
+        high2 = snakeC;
+      }
+  
+      if (betterThan(low2,low1))
+      {
+        lowest = low1;
+        middle1 = low2;
+      }
+      else
+      {
+        lowest = low2;
+        middle1 = low1;
+      }
+  
+      if (betterThan(high1, high2))
+      {
+        highest = high1;
+        middle2 = high2;
+      }
+      else
+      {
+        highest = high2;
+        middle2 = high1;
+      }
+          
+  
+      if (betterThan(middle2, middle1))
+      {
+        return [highest,middle2,middle1,lowest];
+      }
+      else
+      {
+        return [highest,middle1,middle2,lowest];
+      }
+    }  
+
+    function betterThan(snakeA, snakeB)
+    {
+      if(snakeA.score > snakeB.score)
+      {
+        return true;
+      }
+      else if(snakeA.score < snakeB.score)
+      {
+        return false;
+      }
+      else
+      {
+        if(snakeA.kills > snakeB.kills)
+        {
+          return true;
+        }
+        else if(snakeA.kills < snakeB.kills)
+        {
+          return false;
+        }
+        else
+        {
+          return (snakeA.length > snakeB.length);
+        }
+      }
+    }
+
+  //
+  function drawScoreboard() {
+    if(gameServerUp)
+    {
+      if(scoreboardContext && gameState)
+      {
+
+        scoreboardContext.fillStyle = gameColours.background;     //Clears area
+        scoreboardContext.fillRect(0,0, canvasWidth-150, canvasHeight-200);
+
+        scoreboardContext.font = "bold 17px Verdana";
+
+        scoreboardContext.fillStyle = gameColours.border;
+
+        scoreboardContext.fillText("Max",startX+ 2*blockSize,startY+2*blockSize);
+        scoreboardContext.fillText("Now",startX+ 9*blockSize,startY+2*blockSize);
+        scoreboardContext.fillText("Kills",startX+ 16*blockSize,startY+2*blockSize);
+        scoreboardContext.fillText("Name",startX+ 23*blockSize,startY+2*blockSize);
+
+        scoreboardContext.font = "17px Verdana";
+
+        let sortedSnakesByScore = sortSnakes(gameState.snake0,gameState.snake1,gameState.snake2,gameState.snake3);
+
+        let colorDict = {};
+
+        colorDict[gameState.snake0.name] = gameColours.snake0;
+        colorDict[gameState.snake1.name] = gameColours.snake1;
+        colorDict[gameState.snake2.name] = gameColours.snake2;
+        colorDict[gameState.snake3.name] = gameColours.snake3;
+
+        var yOffset = 1;
+        for(var i = 0; i < 4; i++)
+        {
+          scoreboardContext.fillStyle = colorDict[sortedSnakesByScore[i].name];
+
+          var offset = yOffset*3+5;
+
+          scoreboardContext.fillText(sortedSnakesByScore[i].score,startX+ 2*blockSize,startY+offset*blockSize);
+          scoreboardContext.fillText(sortedSnakesByScore[i].length,startX+ 9*blockSize,startY+offset*blockSize);
+          scoreboardContext.fillText(sortedSnakesByScore[i].kills,startX+ 16*blockSize,startY+offset*blockSize);
+          scoreboardContext.fillText(sortedSnakesByScore[i].name,startX+ 23*blockSize,startY+offset*blockSize);
+
+          yOffset++;
+        }
+
+        /*
+        var snake0YOffset = 1*3 + 5;
+        var snake1YOffset = 2*3 + 5;
+        var snake2YOffset = 3*3 + 5;
+        var snake3YOffset = 4*3 + 5;
+        
+        var snake0YOffset = (-1)*(gameState.snake0Position)*3 + 5;
+        var snake1YOffset = (-1)*(gameState.snake1Position)*3 + 5;
+        var snake2YOffset = (-1)*(gameState.snake2Position)*3 + 5;
+        var snake3YOffset = (-1)*(gameState.snake3Position)*3 + 5;
+        
+
+        scoreboardContext.fillStyle = gameColours.snake0;
+
+        scoreboardContext.fillText(gameState.snake0.score,startX+ 2*blockSize,startY+(snake0YOffset)*blockSize);
+        scoreboardContext.fillText(gameState.snake0.length,startX+ 9*blockSize,startY+(snake0YOffset)*blockSize);
+        scoreboardContext.fillText(gameState.snake0.kills,startX+ 16*blockSize,startY+(snake0YOffset)*blockSize);
+        scoreboardContext.fillText(gameState.snake0.name,startX+ 23*blockSize,startY+(snake0YOffset)*blockSize);
+
+        scoreboardContext.fillStyle = gameColours.snake1;
+
+        scoreboardContext.fillText(gameState.snake1.score,startX+ 2*blockSize,startY+(snake1YOffset)*blockSize);
+        scoreboardContext.fillText(gameState.snake1.length,startX+ 9*blockSize,startY+(snake1YOffset)*blockSize);
+        scoreboardContext.fillText(gameState.snake1.kills,startX+ 16*blockSize,startY+(snake1YOffset)*blockSize);
+        scoreboardContext.fillText(gameState.snake1.name,startX+ 23*blockSize,startY+(snake1YOffset)*blockSize);
+
+        scoreboardContext.fillStyle = gameColours.snake2;
+
+        scoreboardContext.fillText(gameState.snake2.score,startX+ 2*blockSize,startY+(snake2YOffset)*blockSize);
+        scoreboardContext.fillText(gameState.snake2.length,startX+ 9*blockSize,startY+(snake2YOffset)*blockSize);
+        scoreboardContext.fillText(gameState.snake2.kills,startX+ 16*blockSize,startY+(snake2YOffset)*blockSize);
+        scoreboardContext.fillText(gameState.snake2.name,startX+ 23*blockSize,startY+(snake2YOffset)*blockSize);
+
+        scoreboardContext.fillStyle = gameColours.snake3;
+
+        scoreboardContext.fillText(gameState.snake3.score,startX+ 2*blockSize,startY+(snake3YOffset)*blockSize);
+        scoreboardContext.fillText(gameState.snake3.length,startX+ 9*blockSize,startY+(snake3YOffset)*blockSize);
+        scoreboardContext.fillText(gameState.snake3.kills,startX+ 16*blockSize,startY+(snake3YOffset)*blockSize);
+        scoreboardContext.fillText(gameState.snake3.name,startX+ 23*blockSize,startY+(snake3YOffset)*blockSize);
+        */
+
+      }
+    }
+
+    requestAnimationFrame(drawScoreboard);
+  }
+//
+
+  function getConfig() {
 
       config =
       {
@@ -1046,16 +1256,26 @@
               <li><a href="https://snake.wits.ai/downloads">Downloads</a></li>
               <li><a href="https://snake.wits.ai/help">Help</a></li>
             </ul>
-          </nav>
-        </header>
-        <div className="row">
-          <div className="column left">
-
-          </div>
-
+        </nav>
+    </header>
+    <div className="row">
+        <div className="column left">
+        <canvas
+         ref={scoreboardRef}
+         width={canvasWidth-150}
+         height={canvasHeight-300}
+         style={{
+           border: '2px solid #000',
+           marginTop: 125,
+           marginLeft: 10,
+           marginBottom: 10,
+          visibility: (index === 0 && serverUp && scoreboardContext && gameState) ? "visible" : "hidden" 
+         }}
+       ></canvas>
+        </div>
           <div className="column middle">
             <div className="custom_carousel_main">
-              <Carousel activeIndex={index} onSelect={handleSelect} controls={false} indicators={false} interval={null} wrap={false}>
+              <Carousel activeIndex={index} onSelect={handleSelect} controls={true} indicators={false} interval={null} wrap={true}>
                 <Carousel.Item>
                   <div>
                     <h2 className="centered" style={{
@@ -1083,39 +1303,6 @@
                         }}
                       ></canvas>}
                     </div>
-                  </div>
-                  <div style={{ visibility: (index === 0 && serverUp) ? "visible" : "hidden" }} id="viewerTimeControls" className="buttonscenteredRow">
-                    <button onClick={() => { gamestateMulti = 1; setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); currentGamestate = startedViewingGamestate }}><i className="material-icons">skip_previous</i></button>
-                    <button onClick={() => { if(rewind)
-                      {
-                        gamestateMulti *=2;
-                        if(gamestateMulti <=-16)
-                        {
-                          gamestateMulti = 1;
-                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); 
-                        }
-                      }else{
-                        gamestateMulti = -2;
-                        setPaused(false); setRewind(true); setFfwd(false); setRealtime(false); 
-                      }}}><i className="material-icons">fast_rewind</i></button>
-                    <button onClick={() => {gamestateMulti = 1; setPaused(prevState => !prevState); setRewind(false); setFfwd(false); setRealtime(false); }}><i className="material-icons">{paused ? "play_circle_outline" : "pause_circle_outline"}</i></button>
-                    <button onClick={() => {if(ffwd)
-                      {
-                        gamestateMulti *=2;
-                        if(gamestateMulti >=16)
-                        {
-                          gamestateMulti = 1;
-                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); 
-                        }
-                      }else{
-                        gamestateMulti = 2;
-                        setPaused(false); setRewind(false); setFfwd(true); setRealtime(false);
-                      }}}><i className="material-icons">fast_forward</i></button>
-                    <button style={{ visibility: (realtime || (index !== 0)) ? "hidden" : "visible" }} onClick={() => { gamestateMulti = 1;setPaused(false); setRewind(false); setFfwd(false); setRealtime(true); currentGamestate = realtimeGamestate }}>{<i className="material-icons">skip_next</i>}</button>
-                  </div>
-                  <div style={{ visibility: (index === 0 && serverUp) ? "visible" : "hidden" }} id="viewerLookControls" className="buttonscenteredSingle">
-                    <button onClick={() => { setDrawCells(prevState => !prevState) }}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
-                    <button style={{ visibility: (index === 0 && serverUp && isGameCached) ? "visible" : "collapse" }} onClick={() => { setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); currentGamestate = startedViewingGamestate; }}><i className="material-icons">settings_backup_restore</i></button>
                   </div>
                 </Carousel.Item>
                 <Carousel.Item>
@@ -1151,6 +1338,39 @@
 
                 </Carousel.Item>
               </Carousel>
+              <div style={{ visibility: (index === 0 && serverUp) ? "visible" : "hidden" }} id="viewerTimeControls" className="buttonscenteredRow">
+                    <button onClick={() => { gamestateMulti = 1; setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); currentGamestate = startedViewingGamestate }}><i className="material-icons">skip_previous</i></button>
+                    <button onClick={() => { if(rewind)
+                      {
+                        gamestateMulti *=2;
+                        if(gamestateMulti <=-16)
+                        {
+                          gamestateMulti = 1;
+                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); 
+                        }
+                      }else{
+                        gamestateMulti = -2;
+                        setPaused(false); setRewind(true); setFfwd(false); setRealtime(false); 
+                      }}}><i className="material-icons">fast_rewind</i></button>
+                    <button onClick={() => {gamestateMulti = 1; setPaused(prevState => !prevState); setRewind(false); setFfwd(false); setRealtime(false); }}><i className="material-icons">{paused ? "play_circle_outline" : "pause_circle_outline"}</i></button>
+                    <button onClick={() => {if(ffwd)
+                      {
+                        gamestateMulti *=2;
+                        if(gamestateMulti >=16)
+                        {
+                          gamestateMulti = 1;
+                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); 
+                        }
+                      }else{
+                        gamestateMulti = 2;
+                        setPaused(false); setRewind(false); setFfwd(true); setRealtime(false);
+                      }}}><i className="material-icons">fast_forward</i></button>
+                    <button style={{ visibility: (realtime || (index !== 0)) ? "hidden" : "visible" }} onClick={() => { gamestateMulti = 1;setPaused(false); setRewind(false); setFfwd(false); setRealtime(true); currentGamestate = realtimeGamestate }}>{<i className="material-icons">skip_next</i>}</button>
+                  </div>
+                  <div style={{ visibility: (index === 0 && serverUp) ? "visible" : "hidden" }} id="viewerLookControls" className="buttonscenteredSingle">
+                    <button onClick={() => { setDrawCells(prevState => !prevState) }}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
+                    <button style={{ visibility: (index === 0 && serverUp && isGameCached) ? "visible" : "collapse" }} onClick={() => { setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); currentGamestate = startedViewingGamestate; }}><i className="material-icons">settings_backup_restore</i></button>
+                  </div>
             </div>
 
 
