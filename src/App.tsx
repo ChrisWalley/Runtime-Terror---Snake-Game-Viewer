@@ -281,9 +281,11 @@
             divNames[i] = { id: i, division: "Division " + i };
           }
           setDivisions(divNames);
+          setInterval(updateGameState, config.game_speed);
+          console.log("Done");
         }
-      })
-      setInterval(updateGameState, config.game_speed);
+      }).catch(err => alert("Error: Could not retrieve division information from the Snake Server\n"+err))
+      
       return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
 
 
@@ -298,7 +300,7 @@
 
       getPlayerData().then(response => {
         if (isMounted) setPlayers(response.data);    // add conditional check
-      })
+      }).catch(err => alert("Error: Could not retrieve player information from the Snake Server\n"+err))
 
       getGamestatesData().then(response => {
         if (isMounted) 
@@ -306,7 +308,7 @@
           setGamestates(response.data);    // add conditional check
           currentGamestate = 0;
         }
-      })
+      }).catch(err => alert("Error: Could not retrieve gamestate information from the Snake Server\n"+err))
 
       getPlayerStatsData().then(response => {
         if (isMounted) {
@@ -319,7 +321,7 @@
 
           setPlayersStats(playerStatsDict);
         }     // add conditional check
-      })
+      }).catch(err => alert("Error: Could not retrieve player statistics from the Snake Server\n"+err))
 
       getDivisionStatsData().then(response => {
         if (isMounted) {
@@ -332,7 +334,7 @@
 
           setDivisionStats(divisionStatsDict);
         }     // add conditional check
-      })
+      }).catch(err => alert("Error: Could not retrieve division statistics from the Snake Server\n"+err))
       return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
     }, [selectedDivision]);
 
@@ -1374,7 +1376,7 @@
                         gamestateMulti = 2;
                         setPaused(false); setRewind(false); setFfwd(true); setRealtime(false);
                       }}}><i className="material-icons">fast_forward</i></button>
-                    <button style={{ visibility: (realtime || (index !== 0)) ? "hidden" : "visible" }} onClick={() => { gamestateMulti = 1;setPaused(false); setRewind(false); setFfwd(false); setRealtime(true); currentGamestate = realtimeGamestate }}>{<i className="material-icons">skip_next</i>}</button>
+                    <button style={{ visibility: (realtime || (index !== 0 || !serverUp)) ? "hidden" : "visible" }} onClick={() => { gamestateMulti = 1;setPaused(false); setRewind(false); setFfwd(false); setRealtime(true); currentGamestate = realtimeGamestate }}>{<i className="material-icons">skip_next</i>}</button>
                   </div>
                   <div style={{ visibility: (index === 0 && serverUp) ? "visible" : "hidden" }} id="viewerLookControls" className="buttonscenteredSingle">
                     <button onClick={() => { setDrawCells(prevState => !prevState) }}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
