@@ -54,7 +54,7 @@ test('Test leaderboard interaction', () => {
   act(() => {
     render(<App />);
   });
-
+  
   const linkElementTerror = screen.getByText(/Terror/i);
   expect(linkElementTerror).toBeInTheDocument();
   fireEvent.click(linkElementTerror);
@@ -111,9 +111,11 @@ test('Test other functions', () => {
   const linkElementBtntriggerDrawStats = screen.getByText(/triggerDrawStats/i);
   fireEvent.click(linkElementBtntriggerDrawStats);
 
+  
   const linkElementTerror = screen.getByText(/Terror/i);
   expect(linkElementTerror).toBeInTheDocument();
   fireEvent.click(linkElementTerror);
+  
 
   fireEvent.click(linkElementBtntriggerMiscFunctions);
   fireEvent.click(linkElementBtntriggerDrawGameboard);

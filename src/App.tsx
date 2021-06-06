@@ -1,6 +1,8 @@
   import React, { useState, useEffect } from "react";
   import axios from 'axios';
   import Carousel from 'react-bootstrap/Carousel';
+  import Chart from "react-apexcharts";
+
 
   const PlayerURL = 'https://marker.ms.wits.ac.za/snake/agents/0'
   const PlayerStatsURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Stats.json'
@@ -12,6 +14,7 @@
   const parseGamestate = require('./parseGamestate');
   const sortSnakes = require('./sortSnakes');
   const canvasHeight = 500;
+  const statsCanvasHeight = canvasHeight-122;
   const canvasWidth = 470;
 
   const blockSize = 9;
@@ -79,7 +82,8 @@
     max_length: "",
     avg_length: "",
     no_of_kills: "",
-    score: ""
+    score: "",
+    positions:""
   };
 
   var gameCurrStatsDivision =
@@ -98,7 +102,8 @@
     max_length: "",
     avg_length: "",
     no_of_kills: "",
-    score: ""
+    score: "",
+    positions:""
   };
 
   var gameCurrStatsDivisionEmpty =
@@ -139,7 +144,48 @@
   var gameSelectedDivisionStr = "Division 0";
   var gameGamestates = { count: 0, states: new Array(0) };
 
+  var testing = false;
   var fakeGamestate = false;
+  var fakeNumArr:number [] = new Array(0);
+
+  var statsUserGraph = {
+            options: {
+              chart: {
+                id: "statsChart",
+                toolbar: {
+                  show: false
+                }
+              },
+              xaxis: {
+                categories: fakeNumArr
+              },
+              yaxis: {
+                labels: {
+                  formatter: (value) => { return ""+parseInt(value) }
+              },
+              title: {
+                text: "Rank",
+                align: 'left',
+                margin: 10,
+                offsetX: 0,
+                offsetY: 0,
+                floating: false,
+                style: {
+                  fontSize:  '14px',
+                  fontWeight:  'bold',
+                  fontFamily:  undefined,
+                  color:  '#263238'
+                },
+                }
+              }
+            },
+            series: [
+              {
+                name: "series",
+                data: fakeNumArr
+              }
+            ]
+          };
 
   function App() {
 
@@ -374,7 +420,6 @@
       if (viewerContext && gameServerUp) {
         viewerContext.fillStyle = gameColours.background;     //Clears area
         viewerContext.fillRect(0, 0, canvasWidth, canvasHeight);
-        viewerContext.fillRect(startX, startY + config.game_width * blockSize + 20, config.game_height * blockSize, 10);
 
         if (gameState && gameState !== null && gameState.state >= 0) {
           progBar =
@@ -652,11 +697,10 @@
         if (statsContext) {
 
           statsContext.fillStyle = gameColours.background;     //Clears area
-          statsContext.fillRect(0, 0, canvasWidth, canvasHeight);
-          statsContext.fillRect(startX, startY + config.game_width * blockSize + 20, config.game_height * blockSize, 10);
+          statsContext.fillRect(0, 0, canvasWidth, statsCanvasHeight);
 
           statsContext.strokeStyle = gameColours.border;          //Draws square around viewer and progress bar
-          statsContext.strokeRect(startX, startY, config.game_width * blockSize, config.game_height * blockSize);
+          statsContext.strokeRect(startX, startY, canvasWidth-2*startX, statsCanvasHeight-2*startY);
 
           statsContext.font = "30px Verdana";
 
@@ -737,47 +781,6 @@
           yOffset++;
         }
 
-        /*
-        var snake0YOffset = 1*3 + 5;
-        var snake1YOffset = 2*3 + 5;
-        var snake2YOffset = 3*3 + 5;
-        var snake3YOffset = 4*3 + 5;
-        
-        var snake0YOffset = (-1)*(gameState.snake0Position)*3 + 5;
-        var snake1YOffset = (-1)*(gameState.snake1Position)*3 + 5;
-        var snake2YOffset = (-1)*(gameState.snake2Position)*3 + 5;
-        var snake3YOffset = (-1)*(gameState.snake3Position)*3 + 5;
-        
-
-        scoreboardContext.fillStyle = gameColours.snake0;
-
-        scoreboardContext.fillText(gameState.snake0.score,startX+ 2*blockSize,startY+(snake0YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake0.length,startX+ 9*blockSize,startY+(snake0YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake0.kills,startX+ 16*blockSize,startY+(snake0YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake0.name,startX+ 23*blockSize,startY+(snake0YOffset)*blockSize);
-
-        scoreboardContext.fillStyle = gameColours.snake1;
-
-        scoreboardContext.fillText(gameState.snake1.score,startX+ 2*blockSize,startY+(snake1YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake1.length,startX+ 9*blockSize,startY+(snake1YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake1.kills,startX+ 16*blockSize,startY+(snake1YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake1.name,startX+ 23*blockSize,startY+(snake1YOffset)*blockSize);
-
-        scoreboardContext.fillStyle = gameColours.snake2;
-
-        scoreboardContext.fillText(gameState.snake2.score,startX+ 2*blockSize,startY+(snake2YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake2.length,startX+ 9*blockSize,startY+(snake2YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake2.kills,startX+ 16*blockSize,startY+(snake2YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake2.name,startX+ 23*blockSize,startY+(snake2YOffset)*blockSize);
-
-        scoreboardContext.fillStyle = gameColours.snake3;
-
-        scoreboardContext.fillText(gameState.snake3.score,startX+ 2*blockSize,startY+(snake3YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake3.length,startX+ 9*blockSize,startY+(snake3YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake3.kills,startX+ 16*blockSize,startY+(snake3YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake3.name,startX+ 23*blockSize,startY+(snake3YOffset)*blockSize);
-        */
-
       }
     }
 
@@ -851,6 +854,8 @@
 
     function updateGameState() {
       //This will fetch the current game state from the server
+
+      
 
       if(fakeGamestate)
       {
@@ -939,11 +944,31 @@
     }
     }
     }
-
+    //also draws stats graph
     function handleUsernameClick(e) {
       setIndex(1);
       setCurrentStatsDivision(gameCurrStatsDivisionEmpty);
       setCurrentStatsUser(playersStats[e]);
+      
+      if(!testing && serverUp)
+      {
+        var positions = playersStats[e].positions.split(',');
+        let xAxisArr = new Array(positions.length);
+        let yAxisArr:number[] = new Array(positions.length);
+        console.log(playersStats[e].username);
+  
+        for(var counter =0;counter < positions.length; counter++)
+        {
+          xAxisArr.push(""+counter);
+          yAxisArr[counter] = parseInt(positions[counter]);
+        }  
+        statsUserGraph.series = [
+          {
+            name: "series",
+            data: yAxisArr
+          }
+        ];
+      }      
     }
 
     function handleDivisionStatsClick(e) {
@@ -958,6 +983,8 @@
       setSelectedDivisionStr("Division "+e);
     }
 
+      
+
     function initVars() {
       gamePaused = paused;
       gameFfwd = ffwd;
@@ -965,6 +992,7 @@
       gameRealtime = realtime;
       gameDrawCells = drawCells;
       gameServerUp = serverUp;
+
     }
 
     function loadImages()
@@ -1091,7 +1119,7 @@
           <nav>
             <div className="logo">
               <h4>Runtime</h4>
-              <h4 onClick={() => setServerUp(prevState => !prevState)}>Terror</h4>
+              <h4 onClick={() => {testing = true; setServerUp(prevState => !prevState)}}>Terror</h4>
             </div>
             <ul className="nav-links">
               <li><a href="">Watch</a></li>
@@ -1156,17 +1184,28 @@
                     }}>{serverUp ? "Statistics" : "Connecting to server..."}</h2>
                     <div
                       className="centered">
-                      {serverUp ? <canvas
+                      {serverUp ? <div>
+                        <canvas
                         id="stats"
                         ref={statsRef}
                         width={canvasWidth}
-                        height={canvasHeight}
+                        height={statsCanvasHeight}
                         style={{
                           border: '2px solid #000',
                           marginTop: 10,
                           marginBottom: 10
                         }}
-                      ></canvas> : <canvas
+                      ></canvas> 
+                      {!testing && serverUp ?
+                      <Chart
+                      options={statsUserGraph.options}
+                      series={statsUserGraph.series}
+                      background= '#fff'
+                      type="line"
+                      width={canvasWidth}
+                      height="100"
+                    /> : null}
+                      </div>: <canvas
                         id="serverDown2"
                         ref={serverDownRef2}
                         width={canvasWidth}
@@ -1178,6 +1217,7 @@
                         }}
                       ></canvas>}
                     </div>
+                    
                   </div>
 
                 </Carousel.Item>
@@ -1237,7 +1277,7 @@
               </tbody>
             </table>
             <div style={{ visibility: "collapse" }} id="hiddenButtons" className="buttons">
-              <button onClick={() => { handleUsernameClick("1"); handleDivisionClick(1); }}>
+              <button onClick={() => { testing = true; handleUsernameClick("1"); handleDivisionClick(1); }}>
                 {<i>triggerClickFunctions</i>}
               </button>
             </div>
@@ -1278,7 +1318,8 @@
                 max_length: "",
                 avg_length: "",
                 no_of_kills: "",
-                score: ""
+                score: "",
+                positions:""
               }; 
               gameCurrStatsDivision = gameCurrStatsDivisionEmpty;
               drawStats(); 
@@ -1295,7 +1336,7 @@
               drawStats(); }}>
               {<i>triggerDrawStats</i>}
             </button>
-            <button onClick={() => { handleUsernameClick('Easy'); handleDivisionClick(0) }}>
+            <button onClick={() => { testing = true;handleUsernameClick('Easy'); handleDivisionClick(0) }}>
               {<i>triggerStatsUser</i>}
             </button>
             <button onClick={() => { handleDivisionStatsClick(1); }}>
