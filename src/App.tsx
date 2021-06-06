@@ -10,6 +10,7 @@
 
   const parseCoords = require('./parseCoords');
   const parseGamestate = require('./parseGamestate');
+  const sortSnakes = require('./sortSnakes');
   const canvasHeight = 500;
   const canvasWidth = 470;
 
@@ -18,7 +19,6 @@
   const startY = blockSize;
 
   var snakeHeadImg = new Image();
-  
 
   let appleImagesArr = {};
 
@@ -129,9 +129,6 @@
     height: 0
   };
 
-  
-
-
   var gamePaused = false;
   var gameFfwd = false;
   var gameRewind = false;
@@ -142,10 +139,7 @@
   var gameSelectedDivisionStr = "Division 0";
   var gameGamestates = { count: 0, states: new Array(0) };
 
-  var addedClickEvent = false;
-
-  var viewerX = 0;
-  var viewerY = 0;
+  var fakeGamestate = false;
 
   function App() {
 
@@ -186,13 +180,6 @@
     useEffect(() => {
 
       if (viewerRef.current) {
-        if(!addedClickEvent)
-          {
-            viewerRef.current.addEventListener('click', clickEventListener, false);
-            viewerX = viewerRef.current.offsetLeft + viewerRef.current.clientLeft;
-            viewerY = viewerRef.current.offsetTop + viewerRef.current.clientTop;
-            addedClickEvent = true;
-          }
         const renderCtx = viewerRef.current.getContext('2d');
 
         if (renderCtx) {
@@ -205,23 +192,20 @@
       }
     }, [viewerContext]);
 
+    useEffect(() => {
 
-        useEffect(() => {
+        if (scoreboardRef.current) {
+          const renderCtx1 = scoreboardRef.current.getContext('2d');
 
-            if (scoreboardRef.current) {
-              const renderCtx1 = scoreboardRef.current.getContext('2d');
+          if (renderCtx1) {
+            setScoreboardContext(renderCtx1);
+          }
+        }
 
-              if (renderCtx1) {
-                setScoreboardContext(renderCtx1);
-              }
-            }
-
-            if (scoreboardContext)
-            {
-              drawScoreboard();}
-            }, [scoreboardContext]);
-
-
+        if (scoreboardContext)
+        {
+          drawScoreboard();}
+    }, [scoreboardContext]);
 
   useEffect(() => {
 
@@ -289,10 +273,6 @@
       return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
 
 
-    }, []);
-
-    useEffect(() => {
-      
     }, []);
 
     useEffect(() => {
@@ -667,35 +647,6 @@
       requestAnimationFrame(drawServerDown);
     }
 
-    function addFakeUserForStats() {
-      var fakseUser =
-      {
-        id: 1,
-        username: "",
-        max_length: "",
-        avg_length: "",
-        no_of_kills: "",
-        score: ""
-      };
-
-      setCurrentStatsUser(fakseUser);
-      setCurrentStatsDivision(gameCurrStatsDivisionEmpty);
-    }
-
-    function addFakeDivisionForStats() {
-      var fakeDiv =
-      {
-        id: 1,
-        division: "",
-        avg_deaths: "",
-        avg_score: "",
-        avg_time_to_apple: ""
-      };
-
-      setCurrentStatsUser(gameCurrStatsUserEmpty);
-      setCurrentStatsDivision(fakeDiv);
-    }
-
     function drawStats() {
       if (gameServerUp) {
         if (statsContext) {
@@ -742,100 +693,6 @@
       requestAnimationFrame(drawStats);
     }
 
-    function sortSnakes(snakeA,snakeB,snakeC,snakeD)
-    {
-      var low1;
-      var high1;
-      var low2;
-      var high2;
-      var lowest;
-      var middle1;
-      var middle2;
-      var highest;
-
-      if (betterThan(snakeB, snakeA))
-      {
-        low1 = snakeA;
-        high1 = snakeB;
-      }
-      else 
-      {
-        low1 = snakeB;
-        high1 = snakeA;
-      }
-  
-      if (betterThan(snakeD, snakeC))
-      {
-        low2 = snakeC;
-        high2 = snakeD
-      }
-      else
-      {
-        low2 = snakeD;
-        high2 = snakeC;
-      }
-  
-      if (betterThan(low2,low1))
-      {
-        lowest = low1;
-        middle1 = low2;
-      }
-      else
-      {
-        lowest = low2;
-        middle1 = low1;
-      }
-  
-      if (betterThan(high1, high2))
-      {
-        highest = high1;
-        middle2 = high2;
-      }
-      else
-      {
-        highest = high2;
-        middle2 = high1;
-      }
-          
-  
-      if (betterThan(middle2, middle1))
-      {
-        return [highest,middle2,middle1,lowest];
-      }
-      else
-      {
-        return [highest,middle1,middle2,lowest];
-      }
-    }  
-
-    function betterThan(snakeA, snakeB)
-    {
-      if(snakeA.score > snakeB.score)
-      {
-        return true;
-      }
-      else if(snakeA.score < snakeB.score)
-      {
-        return false;
-      }
-      else
-      {
-        if(snakeA.kills > snakeB.kills)
-        {
-          return true;
-        }
-        else if(snakeA.kills < snakeB.kills)
-        {
-          return false;
-        }
-        else
-        {
-          return (snakeA.length > snakeB.length);
-        }
-      }
-    }
-
-  //
   function drawScoreboard() {
     if(gameServerUp)
     {
@@ -926,7 +783,6 @@
 
     requestAnimationFrame(drawScoreboard);
   }
-//
 
   function getConfig() {
 
@@ -955,7 +811,7 @@
     }
 
 
-    async function cacheGame(gameRef, game) {
+    async function cacheGame(game) {
       window.sessionStorage.clear();
       window.sessionStorage.setItem("cachedGame", JSON.stringify(game));              //Crashes after storing too many games, so set to only store last 1
       let tempGameStateArr = {};
@@ -963,28 +819,6 @@
       if (tempGameStateArr && tempGameStateArr !== null) {
         setIsGameCached(true);
       }
-    }
-
-    function clickEventListener(event) {
-      
-      
-      var x = event.pageX - viewerX;
-      var y = event.pageY - viewerY-117;
-
-      
-      console.log(y + " vs " + progBar.y + " vs " +progBar.height);
-      console.log(x + " vs " + progBar.x + " vs " +progBar.width);
-    
-      if (y > progBar.y && y < progBar.y + progBar.height
-                && x > progBar.x && x < progBar.x + progBar.width) {
-                setRealtime(false);
-                var clickedGameState = (x- startX)*config.game_width/blockSize;
-                if(clickedGameState >= startedViewingGamestate)
-                {
-                  currentGamestate = clickedGameState;
-                }
-                console.log('clicked progress  bar' +clickedGameState);
-            }
     }
 
     function resetGamestate() {
@@ -1017,19 +851,18 @@
 
     function updateGameState() {
       //This will fetch the current game state from the server
+
+      if(fakeGamestate)
+      {
+        gameGamestates = require('./fakeGamestate.json');
+      }
       if (gameGamestates && gameGamestates!==null) {
         if (realtimeGamestate > config.gameFrames) {
           setGameRef(prevState => (prevState + 1));
-          cacheGame(gameRef, gameStateArr);
+          cacheGame(gameStateArr);
           resetGamestate();
         }
-
-        /*
-        snake0: "0 alive 26 2 9,5 3,5 3,9 17,9",
-        snake1: "1 alive 15 2 48,16 45,16 45,10",
-        snake2: "2 alive 32 2 33,38 19,38",
-        snake3: "3 alive 7 2 1,47 6,47 6,30 8,30",
-        */
+        
       if (!gamePaused)
       {
         if (gameRewind || gameFfwd) {
@@ -1413,13 +1246,53 @@
             <button onClick={() => { setPaused(prevState => prevState); }}>
               {<i>triggerLogicUpdate</i>}
             </button>
-            <button onClick={() => { resetGamestate(); cacheGame(1, 1); }}>
+            <button onClick={() => { resetGamestate(); cacheGame(1); }}>
               {<i>triggerMiscFunctions</i>}
             </button>
-            <button onClick={() => { loadedSnakeImage = false; updateGameState(); drawGameboard(); loadingBarSnake.count = 8; drawServerDown(); }}>
+            <button onClick={() => { 
+              loadedSnakeImage = false;
+              fakeGamestate = true;
+              updateGameState();
+              gamePaused = true;
+              gameFfwd = false;
+              gameRewind = false;
+              updateGameState();
+              gamePaused = false;
+              gameFfwd = true;
+              gameRewind = false;
+              updateGameState();
+              gamePaused = false;
+              gameFfwd = false;
+              gameRewind = true;
+              updateGameState();
+              drawGameboard();
+              drawScoreboard();
+              loadingBarSnake.count = 8;
+              drawServerDown(); }}>
               {<i>triggerDrawGameboard</i>}
             </button>
-            <button onClick={() => { addFakeUserForStats(); drawStats(); addFakeDivisionForStats(); drawStats(); }}>
+            <button onClick={() => { 
+              gameCurrStatsUser = {
+                id: 1,
+                username: "",
+                max_length: "",
+                avg_length: "",
+                no_of_kills: "",
+                score: ""
+              }; 
+              gameCurrStatsDivision = gameCurrStatsDivisionEmpty;
+              drawStats(); 
+
+              gameCurrStatsDivision =
+              {
+                id: 1,
+                division: "",
+                avg_deaths: "",
+                avg_score: "",
+                avg_time_to_apple: ""
+              };
+              gameCurrStatsUser = gameCurrStatsUserEmpty;
+              drawStats(); }}>
               {<i>triggerDrawStats</i>}
             </button>
             <button onClick={() => { handleUsernameClick('Easy'); handleDivisionClick(0) }}>
