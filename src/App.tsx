@@ -949,6 +949,26 @@
       setIndex(1);
       setCurrentStatsDivision(gameCurrStatsDivisionEmpty);
       setCurrentStatsUser(playersStats[e]);
+      
+      if(!testing && serverUp)
+      {
+        var positions = playersStats[e].positions.split(',');
+        let xAxisArr = new Array(positions.length);
+        let yAxisArr:number[] = new Array(positions.length);
+        console.log(playersStats[e].username);
+  
+        for(var counter =0;counter < positions.length; counter++)
+        {
+          xAxisArr.push(""+counter);
+          yAxisArr[counter] = parseInt(positions[counter]);
+        }  
+        statsUserGraph.series = [
+          {
+            name: "series",
+            data: yAxisArr
+          }
+        ];
+      }      
     }
 
     function handleDivisionStatsClick(e) {
@@ -1099,7 +1119,7 @@
           <nav>
             <div className="logo">
               <h4>Runtime</h4>
-              <h4 onClick={() => setServerUp(prevState => !prevState)}>Terror</h4>
+              <h4 onClick={() => {testing = true; setServerUp(prevState => !prevState)}}>Terror</h4>
             </div>
             <ul className="nav-links">
               <li><a href="">Watch</a></li>
@@ -1176,6 +1196,7 @@
                           marginBottom: 10
                         }}
                       ></canvas> 
+                      {!testing && serverUp ?
                       <Chart
                       options={statsUserGraph.options}
                       series={statsUserGraph.series}
@@ -1183,7 +1204,8 @@
                       type="line"
                       width={canvasWidth}
                       height="100"
-                    /></div>: <canvas
+                    /> : null}
+                      </div>: <canvas
                         id="serverDown2"
                         ref={serverDownRef2}
                         width={canvasWidth}
