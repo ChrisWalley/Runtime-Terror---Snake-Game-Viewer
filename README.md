@@ -9,9 +9,13 @@ Branch main:
 
 View it here: http://walleyco.de:3000/
 
-![Capture](https://user-images.githubusercontent.com/19406443/119340146-69ba5b80-bc92-11eb-980f-dc16389e8568.PNG)
+![image](https://user-images.githubusercontent.com/19406443/120919333-50b1a180-c6b9-11eb-8bb1-ef7be791c0b5.png)
 
 Previous UI:
+
+
+![Capture](https://user-images.githubusercontent.com/19406443/119340146-69ba5b80-bc92-11eb-980f-dc16389e8568.PNG)
+
 
 ![Screen Capture](https://user-images.githubusercontent.com/19406443/117628485-7fe7f800-b179-11eb-8c40-95374b5b5a23.PNG)
 
