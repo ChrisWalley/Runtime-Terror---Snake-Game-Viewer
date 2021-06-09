@@ -53,7 +53,6 @@
 
   var gamestateMulti = 1;
 
-  let gameStateArr = {};
 
   var startedViewingGamestate = 0;
 
@@ -827,6 +826,18 @@
       }
     }
 
+    function switchToCachedGame()
+    {
+      if(isGameCached)
+      {
+        let tempGameStateArr = JSON.parse(sessionStorage.getItem("cachedGame")!);
+        if (tempGameStateArr && tempGameStateArr !== null) {
+          resetGamestate();
+          gameGamestates = tempGameStateArr;
+        }
+      }
+    }
+
     function resetGamestate() {
       gameState =
       {
@@ -850,7 +861,6 @@
       appleY = 0;
       lastAppleX = appleX;
       lastAppleY = appleY;
-      gameStateArr = {};
       realtimeGamestate = 0;
       currentGamestate = 0;
     }
@@ -865,12 +875,6 @@
         gameGamestates = require('./fakeGamestate.json');
       }
       if (gameGamestates && gameGamestates!==null) {
-        if (realtimeGamestate > config.gameFrames) {
-          setGameRef(prevState => (prevState + 1));
-          cacheGame(gameStateArr);
-          resetGamestate();
-        }
-        
       if (!gamePaused)
       {
         if (gameRewind || gameFfwd) {
@@ -887,7 +891,9 @@
           currentGamestate++;
           if(currentGamestate>config.gameFrames)
           {
-            currentGamestate = 0;
+            setGameRef(prevState => (prevState + 1));
+          cacheGame(gameGamestates);
+          resetGamestate();
           }
         }
       
@@ -977,7 +983,9 @@
     function handleDivisionStatsClick(e) {
       setIndex(1);
       setCurrentStatsUser(gameCurrStatsUserEmpty);
-      setCurrentStatsDivision(divisionStats[selectedDivision]);
+      console.log(divisionStats);
+      console.log(selectedDivision);
+      setCurrentStatsDivision(divisionStats["Division "+selectedDivision]);
     }
 
     function handleDivisionClick(e) {
@@ -1256,7 +1264,7 @@
                   </div>
                   <div style={{ visibility: (index === 0 && serverUp) ? "visible" : "hidden" }} id="viewerLookControls" className="buttonscenteredSingle">
                     <button onClick={() => { setDrawCells(prevState => !prevState) }}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
-                    <button style={{ visibility: (index === 0 && serverUp && isGameCached) ? "visible" : "collapse" }} onClick={() => { setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); currentGamestate = startedViewingGamestate; }}><i className="material-icons">settings_backup_restore</i></button>
+                    <button style={{ visibility: (index === 0 && serverUp && isGameCached) ? "visible" : "collapse" }} onClick={() => { setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); switchToCachedGame(); }}><i className="material-icons">settings_backup_restore</i></button>
                   </div>
             </div>
 
