@@ -29,6 +29,9 @@
   var loadedAllAppleImages = false;
   var loadedAppleImagesCounter = 0;
 
+  var divisionPlanets = ["Alderaan","Corellia","Dantooine","Kessel","Tatooine","Yavin 4","Kashyyyk","Bespin","Dagobah","Hoth"
+                         ,"Fondor","Mandalore","Endor","Coruscant","Naboo","Starkiller Base","Death Star"];
+
   var loadingBarSnake =
   {
     x: 0,
@@ -308,7 +311,7 @@
           var n = response.data["count"];
           var divNames = new Array(n)
           for (var i = 0; i < n; i++) {
-            divNames[i] = { id: i, division: "Division " + i };
+            divNames[i] = { id: i, division: "Division " + i +(i > divisionPlanets.length ? "" : " - "+divisionPlanets[divisionPlanets.length-i-1]) };
           }
           setDivisions(divNames);
           setInterval(updateGameState, config.game_speed);
