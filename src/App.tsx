@@ -1,6 +1,7 @@
   import React, { useState, useEffect } from "react";
   import axios from 'axios';
   import Carousel from 'react-bootstrap/Carousel';
+  import Chart from "react-apexcharts";
   import ReactApexChart from "react-apexcharts";
 
 
@@ -147,6 +148,7 @@
   var testing = false;
   var fakeGamestate = false;
   var fakeNumArr:number [] = new Array(0);
+  var selectedStatsDivision = false;
 
   var statsUserGraph = {
             options: {
@@ -187,6 +189,56 @@
             ]
           };
 
+  var divisionPositionsChart = {
+      options: {
+        chart: {
+          height: 350,
+          background: '#fff',
+          toolbar: {
+            show: false
+          }
+        },
+        dataLabels: {
+          enabled: false,
+        },
+        markers: {
+          size: 1
+        },
+        xaxis: {
+          categories: [1, 2, 3, 4, 5, 6, 7],
+          title: {
+            text: 'Game'
+          }
+        },
+        yaxis: {
+          title: {
+            text: "Position"
+          }
+        },
+        title: {
+          text: "Players Postion Overtime"
+        }
+      },
+      series: [
+        {
+          name: "easy",
+          data: [2, 2, 3, 2, 2, 2, 2]
+        },
+        {
+          name: "very easy",
+          data: [3, 3, 2, 3, 3, 4, 3]
+        },
+        {
+          name: "medium",
+          data: [1, 1, 1, 1, 1, 1, 1]
+        },
+        {
+          name: "random",
+          data: [4, 4, 4, 4, 4, 3, 4]
+        }
+      ]
+    };
+
   // fake scores of players under a certain division
   var divisionScoresChart = {
     series: [
@@ -211,7 +263,6 @@
     options: {
         chart: {
           height: 350,
-          type: 'line',
           background: '#fff',
           toolbar: {
             show: false
@@ -220,12 +271,8 @@
         dataLabels: {
           enabled: false,
         },
-        stroke: {
-          curve: 'straight'
-        },
         title: {
           text: 'Players Score Overtime',
-          align: 'left'
         },
         markers: {
           size: 1
@@ -240,19 +287,12 @@
           title: {
             text: 'Score'
           }
-        },
-        legend: {
-          position: 'top',
-          horizontalAlign: 'right',
-          floating: true,
-          offsetY: -25,
-          offsetX: -5
         }
       }
   };
 
   // fake positions of players under a certain division
-  var divisionPositionsChart = {
+/*  var divisionPositionsChart = {
     series: [
       {
         name: "easy",
@@ -314,7 +354,7 @@
         }
       }
   }
-
+*/
   function App() {
 
     const viewerRef = React.useRef<HTMLCanvasElement>(null);
@@ -349,6 +389,7 @@
     const [divisions, setDivisions] = useState(new Array(0))
     const [divisionInfo, setDivisionInfo] = useState(gameDivisionInfo)
     const [gamestates, setGamestates] = useState(gameGamestates)
+    const [statsSelectedDivisionClick, setStatsSelectedDivisionClick] = useState(selectedStatsDivision)
 
 
     useEffect(() => {
@@ -821,6 +862,7 @@
     }
 
     function drawStats() {
+
       if (gameServerUp) {
         if (statsContext) {
 
@@ -1077,6 +1119,7 @@
       setIndex(1);
       setCurrentStatsDivision(gameCurrStatsDivisionEmpty);
       setCurrentStatsUser(playersStats[e]);
+      setStatsSelectedDivisionClick(false);
 
       if(!testing && serverUp)
       {
@@ -1103,6 +1146,7 @@
       setIndex(1);
       setCurrentStatsUser(gameCurrStatsUserEmpty);
       setCurrentStatsDivision(divisionStats[selectedDivision]);
+      setStatsSelectedDivisionClick(true);
     }
 
     function handleDivisionClick(e) {
@@ -1324,19 +1368,19 @@
                           marginBottom: 10
                         }}
                       ></canvas>
-                      {serverUp && selectedDivision? <ReactApexChart
+                      {serverUp && statsSelectedDivisionClick? <ReactApexChart
+                    		options={divisionPositionsChart.options}
+                    		series={divisionPositionsChart.series}
+                    		type="line"
+                    		height={200}
+          		          width={canvasWidth} /> : null}
+                      {serverUp && statsSelectedDivisionClick? <ReactApexChart
                         options={divisionScoresChart.options}
                         series={divisionScoresChart.series}
                         type="line"
                         height={200}
-                        width={canvasWidth} /> : 'Ooops! Failed to load the Chart'}
-                      {serverUp && selectedDivision? <ReactApexChart
-                        options={divisionPositionsChart.options}
-                        series={divisionPositionsChart.series}
-                        type="line"
-                        height={200}
-                        width={canvasWidth} /> : 'Ooops! Failed to load the Chart'}
-                      {!testing && serverUp ?
+                        width={canvasWidth} /> : null}
+                      {!testing && serverUp && !statsSelectedDivisionClick ?
                       <Chart
                       options={statsUserGraph.options}
                       series={statsUserGraph.series}
