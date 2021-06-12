@@ -2,6 +2,7 @@
   import axios from 'axios';
   import Carousel from 'react-bootstrap/Carousel';
   import Chart from "react-apexcharts";
+  import ReactApexChart from "react-apexcharts";
 
 
   const PlayerURL = 'https://marker.ms.wits.ac.za/snake/agents/0'
@@ -150,6 +151,7 @@
   var testing = false;
   var fakeGamestate = false;
   var fakeNumArr:number [] = new Array(0);
+  var selectedStatsDivision = false;
 
   var statsUserGraph = {
             options: {
@@ -190,6 +192,172 @@
             ]
           };
 
+  var divisionPositionsChart = {
+      options: {
+        chart: {
+          height: 350,
+          background: '#fff',
+          toolbar: {
+            show: false
+          }
+        },
+        dataLabels: {
+          enabled: false,
+        },
+        markers: {
+          size: 1
+        },
+        xaxis: {
+          categories: [1, 2, 3, 4, 5, 6, 7],
+          title: {
+            text: 'Game'
+          }
+        },
+        yaxis: {
+          title: {
+            text: "Position"
+          }
+        },
+        title: {
+          text: "Players Postion Overtime"
+        }
+      },
+      series: [
+        {
+          name: "easy",
+          data: [2, 2, 3, 2, 2, 2, 2]
+        },
+        {
+          name: "very easy",
+          data: [3, 3, 2, 3, 3, 4, 3]
+        },
+        {
+          name: "medium",
+          data: [1, 1, 1, 1, 1, 1, 1]
+        },
+        {
+          name: "random",
+          data: [4, 4, 4, 4, 4, 3, 4]
+        }
+      ]
+    };
+
+  // fake scores of players under a certain division
+  var divisionScoresChart = {
+    series: [
+      {
+        name: "easy",
+        data: [18, 19, 23, 26, 19, 21, 21]
+      },
+      {
+        name: "very easy",
+        data: [12, 11, 14, 18, 11, 12, 13]
+      },
+      {
+        name: "medium",
+        data: [28, 29, 33, 36, 33, 31, 32]
+      },
+      {
+        name: "random",
+        data: [1, 3, 4, 3.21, 3.1, 2.4, 2.5]
+      }
+    ],
+
+    options: {
+        chart: {
+          height: 350,
+          background: '#fff',
+          toolbar: {
+            show: false
+          }
+        },
+        dataLabels: {
+          enabled: false,
+        },
+        title: {
+          text: 'Players Score Overtime',
+        },
+        markers: {
+          size: 1
+        },
+        xaxis: {
+          categories: [1, 2, 3, 4, 5, 6, 7],
+          title: {
+            text: 'Game'
+          }
+        },
+        yaxis: {
+          title: {
+            text: 'Score'
+          }
+        }
+      }
+  };
+
+  // fake positions of players under a certain division
+/*  var divisionPositionsChart = {
+    series: [
+      {
+        name: "easy",
+        data: [2, 2, 3, 2, 2, 2, 2]
+      },
+      {
+        name: "very easy",
+        data: [3, 3, 2, 3, 3, 4, 3]
+      },
+      {
+        name: "medium",
+        data: [1, 1, 1, 1, 1, 1, 1]
+      },
+      {
+        name: "random",
+        data: [4, 4, 4, 4, 4, 3, 4]
+      }
+    ],
+
+    options: {
+        chart: {
+          height: 350,
+          type: 'line',
+          background: '#fff',
+          toolbar: {
+            show: false
+          }
+        },
+        dataLabels: {
+          enabled: false,
+        },
+        stroke: {
+          curve: 'straight'
+        },
+        title: {
+          text: 'Players Postion Overtime',
+          align: 'left'
+        },
+        markers: {
+          size: 1
+        },
+        xaxis: {
+          categories: [1, 2, 3, 4, 5, 6, 7],
+          title: {
+            text: 'Game'
+          }
+        },
+        yaxis: {
+          title: {
+            text: 'Position'
+          }
+        },
+        legend: {
+          position: 'top',
+          horizontalAlign: 'right',
+          floating: true,
+          offsetY: -25,
+          offsetX: -5
+        }
+      }
+  }
+*/
   function App() {
 
     const viewerRef = React.useRef<HTMLCanvasElement>(null);
@@ -224,6 +392,7 @@
     const [divisions, setDivisions] = useState(new Array(0))
     const [divisionInfo, setDivisionInfo] = useState(gameDivisionInfo)
     const [gamestates, setGamestates] = useState(gameGamestates)
+    const [statsSelectedDivisionClick, setStatsSelectedDivisionClick] = useState(selectedStatsDivision)
 
 
     useEffect(() => {
@@ -318,7 +487,7 @@
           console.log("Done");
         }
       }).catch(err => alert("Error: Could not retrieve division information from the Snake Server\n"+err))
-      
+
       return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
 
 
@@ -332,7 +501,7 @@
       }).catch(err => alert("Error: Could not retrieve player information from the Snake Server\n"+err))
 
       getGamestatesData().then(response => {
-        if (isMounted) 
+        if (isMounted)
         {
           setGamestates(response.data);    // add conditional check
           currentGamestate = 0;
@@ -696,6 +865,7 @@
     }
 
     function drawStats() {
+
       if (gameServerUp) {
         if (statsContext) {
 
@@ -740,7 +910,7 @@
       requestAnimationFrame(drawStats);
     }
 
-  function drawScoreboard() {
+    function drawScoreboard() {
     if(gameServerUp)
     {
       if(scoreboardContext && gameState)
@@ -790,7 +960,7 @@
     requestAnimationFrame(drawScoreboard);
   }
 
-  function getConfig() {
+    function getConfig() {
 
       config =
       {
@@ -858,7 +1028,7 @@
     function updateGameState() {
       //This will fetch the current game state from the server
 
-      
+
 
       if(fakeGamestate)
       {
@@ -870,12 +1040,12 @@
           cacheGame(gameStateArr);
           resetGamestate();
         }
-        
+
       if (!gamePaused)
       {
         if (gameRewind || gameFfwd) {
           currentGamestate += gamestateMulti;
-  
+
           if (currentGamestate <= 0 || currentGamestate >= realtimeGamestate) {
             setRewind(false);
             setFfwd(false);
@@ -890,8 +1060,8 @@
             currentGamestate = 0;
           }
         }
-      
-      
+
+
       if (gameGamestates.count > 0) {
         if(!gameGamestates.states[currentGamestate] || gameGamestates.states[currentGamestate]===null)
         {
@@ -909,7 +1079,7 @@
           appleHealth -= 1.0*gamestateMulti*config.decay_rate;
           if(appleHealth < -5 && gamestateMulti<0)
           {
-            appleHealth += 10; 
+            appleHealth += 10;
           }
         }
         else {
@@ -936,7 +1106,7 @@
           realtimeGamestate++;
         }
 
-        
+
 
         appleCol.r = (appleHealth + 5) * 25.5;
         appleCol.g = (appleHealth + 5) * 21.5;
@@ -952,32 +1122,34 @@
       setIndex(1);
       setCurrentStatsDivision(gameCurrStatsDivisionEmpty);
       setCurrentStatsUser(playersStats[e]);
-      
+      setStatsSelectedDivisionClick(false);
+
       if(!testing && serverUp)
       {
         var positions = playersStats[e].positions.split(',');
         let xAxisArr = new Array(positions.length);
         let yAxisArr:number[] = new Array(positions.length);
         console.log(playersStats[e].username);
-  
+
         for(var counter =0;counter < positions.length; counter++)
         {
           xAxisArr.push(""+counter);
           yAxisArr[counter] = parseInt(positions[counter]);
-        }  
+        }
         statsUserGraph.series = [
           {
             name: "series",
             data: yAxisArr
           }
         ];
-      }      
+      }
     }
 
     function handleDivisionStatsClick(e) {
       setIndex(1);
       setCurrentStatsUser(gameCurrStatsUserEmpty);
       setCurrentStatsDivision(divisionStats[selectedDivision]);
+      setStatsSelectedDivisionClick(true);
     }
 
     function handleDivisionClick(e) {
@@ -986,7 +1158,7 @@
       setSelectedDivisionStr("Division "+e);
     }
 
-      
+
 
     function initVars() {
       gamePaused = paused;
@@ -1144,7 +1316,7 @@
            marginTop: 125,
            marginLeft: 10,
            marginBottom: 10,
-          visibility: (index === 0 && serverUp && scoreboardContext && gameState) ? "visible" : "hidden" 
+          visibility: (index === 0 && serverUp && scoreboardContext && gameState) ? "visible" : "hidden"
          }}
        ></canvas>
         </div>
@@ -1198,8 +1370,20 @@
                           marginTop: 10,
                           marginBottom: 10
                         }}
-                      ></canvas> 
-                      {!testing && serverUp ?
+                      ></canvas>
+                      {serverUp && statsSelectedDivisionClick? <ReactApexChart
+                    		options={divisionPositionsChart.options}
+                    		series={divisionPositionsChart.series}
+                    		type="line"
+                    		height={200}
+          		          width={canvasWidth} /> : null}
+                      {serverUp && statsSelectedDivisionClick? <ReactApexChart
+                        options={divisionScoresChart.options}
+                        series={divisionScoresChart.series}
+                        type="line"
+                        height={200}
+                        width={canvasWidth} /> : null}
+                      {!testing && serverUp && !statsSelectedDivisionClick ?
                       <Chart
                       options={statsUserGraph.options}
                       series={statsUserGraph.series}
@@ -1220,7 +1404,7 @@
                         }}
                       ></canvas>}
                     </div>
-                    
+
                   </div>
 
                 </Carousel.Item>
@@ -1233,11 +1417,11 @@
                         if(gamestateMulti <=-16)
                         {
                           gamestateMulti = 1;
-                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); 
+                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false);
                         }
                       }else{
                         gamestateMulti = -2;
-                        setPaused(false); setRewind(true); setFfwd(false); setRealtime(false); 
+                        setPaused(false); setRewind(true); setFfwd(false); setRealtime(false);
                       }}}><i className="material-icons">fast_rewind</i></button>
                     <button onClick={() => {gamestateMulti = 1; setPaused(prevState => !prevState); setRewind(false); setFfwd(false); setRealtime(false); }}><i className="material-icons">{paused ? "play_circle_outline" : "pause_circle_outline"}</i></button>
                     <button onClick={() => {if(ffwd)
@@ -1246,7 +1430,7 @@
                         if(gamestateMulti >=16)
                         {
                           gamestateMulti = 1;
-                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); 
+                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false);
                         }
                       }else{
                         gamestateMulti = 2;
@@ -1292,7 +1476,7 @@
             <button onClick={() => { resetGamestate(); cacheGame(1); }}>
               {<i>triggerMiscFunctions</i>}
             </button>
-            <button onClick={() => { 
+            <button onClick={() => {
               loadedSnakeImage = false;
               fakeGamestate = true;
               updateGameState();
@@ -1314,7 +1498,7 @@
               drawServerDown(); }}>
               {<i>triggerDrawGameboard</i>}
             </button>
-            <button onClick={() => { 
+            <button onClick={() => {
               gameCurrStatsUser = {
                 id: 1,
                 username: "",
@@ -1323,9 +1507,9 @@
                 no_of_kills: "",
                 score: "",
                 positions:""
-              }; 
+              };
               gameCurrStatsDivision = gameCurrStatsDivisionEmpty;
-              drawStats(); 
+              drawStats();
 
               gameCurrStatsDivision =
               {
