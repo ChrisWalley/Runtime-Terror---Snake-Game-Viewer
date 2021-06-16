@@ -747,7 +747,7 @@
       {
 
         scoreboardContext.fillStyle = gameColours.background;     //Clears area
-        scoreboardContext.fillRect(0,0, canvasWidth-150, canvasHeight-200);
+        scoreboardContext.fillRect(0,0, canvasWidth-100, canvasHeight-100);
 
         scoreboardContext.font = "bold 17px Verdana";
 
@@ -783,6 +783,46 @@
 
           yOffset++;
         }
+        scoreboardContext.fillStyle = gameColours.border;
+
+        var date = new Date(gameGamestates.states[0]["timeCreated"]); // create Date object
+        var month = date.getMonth() + 1;
+        var day = date.getDate();
+        var hour = date.getHours();
+        var min = date.getMinutes();
+        var sec = date.getSeconds();
+
+        var monthSpacer = "";
+        var daySpacer = "";
+        var hourSpacer = "";
+        var minSpacer = "";
+        var secSpacer = "";
+
+        if(month < 10)
+        {
+          monthSpacer = "0";
+        }
+        if(day < 10)
+        {
+          daySpacer = "0";
+        }
+        if(hour < 10)
+        {
+          hourSpacer = "0";
+        }
+        if(min < 10)
+        {
+          minSpacer = "0";
+        }
+        if(sec < 10)
+        {
+          secSpacer = "0";
+        }
+
+        var timeDate = (monthSpacer+month+"/"+daySpacer+day+" "+hourSpacer+hour+":"+minSpacer+min+":"+secSpacer+sec);
+
+        scoreboardContext.fillText("Game state:      "+gameState.state+" / "+config.gameFrames,startX+ 2*blockSize,startY+26*blockSize);
+        scoreboardContext.fillText("Time started:    "+timeDate,startX+ 2*blockSize,startY+30*blockSize);
 
       }
     }
@@ -983,7 +1023,7 @@
     function handleDivisionClick(e) {
       setIndex(0);
       setSelectedDivision(e);
-      setSelectedDivisionStr("Division "+e);
+      setSelectedDivisionStr("Division " + e +(e > divisionPlanets.length ? "" : " - "+divisionPlanets[divisionPlanets.length-e-1]));
     }
 
 
@@ -1139,11 +1179,11 @@
         <div className="column left">
         <canvas
          ref={scoreboardRef}
-         width={canvasWidth-150}
-         height={canvasHeight-300}
+         width={canvasWidth-100}
+         height={canvasHeight-200}
          style={{
            border: '2px solid #000',
-           marginTop: 125,
+           marginTop: 75,
            marginLeft: 10,
            marginBottom: 10,
           visibility: (index === 0 && serverUp && scoreboardContext && gameState) ? "visible" : "hidden"
