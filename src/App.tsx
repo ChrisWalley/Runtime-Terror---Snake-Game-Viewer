@@ -1569,7 +1569,6 @@ import { read } from "fs/promises";
             <h2 id='leader'>Leaderboard</h2>
 
             <table id='player' style={{marginLeft: 70,}}>
-              <h2></h2>
               <thead >
                 <tr>{renderTableHeader()}</tr>
               </thead>

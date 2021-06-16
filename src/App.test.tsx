@@ -89,8 +89,8 @@ test('Test header links', () => {
   const linkElementDocs = screen.getByText(/Docs/i);
   expect(linkElementDocs).toBeInTheDocument();
 
-  const linkElementDownloads = screen.getByText(/Downloads/i);
-  expect(linkElementDownloads).toBeInTheDocument();
+  const linkElementDownload = screen.getByText(/Download/i);
+  expect(linkElementDownload).toBeInTheDocument();
 
   const linkElementHelp = screen.getByText(/Help/i);
   expect(linkElementHelp).toBeInTheDocument();
