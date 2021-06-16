@@ -323,7 +323,7 @@
           console.log("Done");
         }
       }).catch(err => alert("Error: Could not retrieve division information from the Snake Server\n"+err))
-      
+
       return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
 
 
@@ -341,7 +341,7 @@
       }).catch(err => alert("Error: Could not retrieve player information from the Snake Server\n"+err))
 
       getGamestatesData().then(response => {
-        if (isMounted) 
+        if (isMounted)
         {
           setGamestates(response.data);    // add conditional check
           currentGamestate = 0;
@@ -757,7 +757,7 @@
       {
 
         scoreboardContext.fillStyle = gameColours.background;     //Clears area
-        scoreboardContext.fillRect(0,0, canvasWidth-150, canvasHeight-200);
+        scoreboardContext.fillRect(0,0, canvasWidth-100, canvasHeight-100);
 
         scoreboardContext.font = "bold 17px Verdana";
 
@@ -793,6 +793,46 @@
 
           yOffset++;
         }
+        scoreboardContext.fillStyle = gameColours.border;
+
+        var date = new Date(gameGamestates.states[0]["timeCreated"]); // create Date object
+        var month = date.getMonth() + 1;
+        var day = date.getDate();
+        var hour = date.getHours();
+        var min = date.getMinutes();
+        var sec = date.getSeconds();
+
+        var monthSpacer = "";
+        var daySpacer = "";
+        var hourSpacer = "";
+        var minSpacer = "";
+        var secSpacer = "";
+
+        if(month < 10)
+        {
+          monthSpacer = "0";
+        }
+        if(day < 10)
+        {
+          daySpacer = "0";
+        }
+        if(hour < 10)
+        {
+          hourSpacer = "0";
+        }
+        if(min < 10)
+        {
+          minSpacer = "0";
+        }
+        if(sec < 10)
+        {
+          secSpacer = "0";
+        }
+
+        var timeDate = (monthSpacer+month+"/"+daySpacer+day+" "+hourSpacer+hour+":"+minSpacer+min+":"+secSpacer+sec);
+
+        scoreboardContext.fillText("Game state:      "+gameState.state+" / "+config.gameFrames,startX+ 2*blockSize,startY+26*blockSize);
+        scoreboardContext.fillText("Time started:    "+timeDate,startX+ 2*blockSize,startY+30*blockSize);
 
       }
     }
@@ -909,7 +949,7 @@
       {
         if (gameRewind || gameFfwd) {
           currentGamestate += gamestateMulti;
-  
+
           if (currentGamestate <= 0 || currentGamestate >= realtimeGamestate) {
             setRewind(false);
             setFfwd(false);
@@ -928,7 +968,8 @@
             checkForNewGameLoopRef = setInterval(checkForNewGame, 5000);
           }
         }
-      
+
+
       if (gameGamestates.count > 0) {
         if(!gameGamestates.states[currentGamestate] || gameGamestates.states[currentGamestate]===null)
         {
@@ -950,7 +991,7 @@
           appleHealth -= 1.0*gamestateMulti*config.decay_rate;
           if(appleHealth < -5 && gamestateMulti<0)
           {
-            appleHealth += 10; 
+            appleHealth += 10;
           }
         }
         else {
@@ -977,7 +1018,7 @@
           realtimeGamestate++;
         }
 
-        
+
 
         appleCol.r = (appleHealth + 5) * 25.5;
         appleCol.g = (appleHealth + 5) * 21.5;
@@ -993,26 +1034,26 @@
       setIndex(1);
       setCurrentStatsDivision(gameCurrStatsDivisionEmpty);
       setCurrentStatsUser(playersStats[e]);
-      
+
       if(!testing && serverUp)
       {
         var positions = playersStats[e].positions.split(',');
         let xAxisArr = new Array(positions.length);
         let yAxisArr:number[] = new Array(positions.length);
         console.log(playersStats[e].username);
-  
+
         for(var counter =0;counter < positions.length; counter++)
         {
           xAxisArr.push(""+counter);
           yAxisArr[counter] = parseInt(positions[counter]);
-        }  
+        }
         statsUserGraph.series = [
           {
             name: "series",
             data: yAxisArr
           }
         ];
-      }      
+      }
     }
 
     function handleDivisionStatsClick(e) {
@@ -1024,10 +1065,10 @@
     function handleDivisionClick(e) {
       setIndex(0);
       setSelectedDivision(e);
-      setSelectedDivisionStr("Division "+e);
+      setSelectedDivisionStr("Division " + e +(e > divisionPlanets.length ? "" : " - "+divisionPlanets[divisionPlanets.length-e-1]));
     }
 
-      
+
 
     function initVars() {
       gamePaused = paused;
@@ -1161,10 +1202,12 @@
       <>
         <header>
           <nav>
-            <div className="logo">
-              <h4>Runtime</h4>
-              <h4 onClick={() => {testing = true; setServerUp(prevState => !prevState)}}>Terror</h4>
-            </div>
+
+            <div className="title">
+            <h1>Runtime</h1>
+            <h1 onClick={() => {testing = true; setServerUp(prevState => !prevState)}}>Terror</h1>
+
+</div>
             <ul className="nav-links">
               <li><a href="">Watch</a></li>
               <li><a href="https://snake.wits.ai/">Home</a></li>
@@ -1178,14 +1221,14 @@
         <div className="column left">
         <canvas
          ref={scoreboardRef}
-         width={canvasWidth-150}
-         height={canvasHeight-300}
+         width={canvasWidth-100}
+         height={canvasHeight-200}
          style={{
            border: '2px solid #000',
-           marginTop: 125,
+           marginTop: 75,
            marginLeft: 10,
            marginBottom: 10,
-          visibility: (index === 0 && serverUp && scoreboardContext && gameState) ? "visible" : "hidden" 
+          visibility: (index === 0 && serverUp && scoreboardContext && gameState) ? "visible" : "hidden"
          }}
        ></canvas>
         </div>
@@ -1239,7 +1282,7 @@
                           marginTop: 10,
                           marginBottom: 10
                         }}
-                      ></canvas> 
+                      ></canvas>
                       {!testing && serverUp ?
                       <Chart
                       options={statsUserGraph.options}
@@ -1261,7 +1304,7 @@
                         }}
                       ></canvas>}
                     </div>
-                    
+
                   </div>
 
                 </Carousel.Item>
@@ -1274,11 +1317,11 @@
                         if(gamestateMulti <=-16)
                         {
                           gamestateMulti = 1;
-                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); 
+                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false);
                         }
                       }else{
                         gamestateMulti = -2;
-                        setPaused(false); setRewind(true); setFfwd(false); setRealtime(false); 
+                        setPaused(false); setRewind(true); setFfwd(false); setRealtime(false);
                       }}}><i className="material-icons">fast_rewind</i></button>
                     <button onClick={() => {gamestateMulti = 1; setPaused(prevState => !prevState); setRewind(false); setFfwd(false); setRealtime(false); }}><i className="material-icons">{paused ? "play_circle_outline" : "pause_circle_outline"}</i></button>
                     <button onClick={() => {if(ffwd)
@@ -1287,7 +1330,7 @@
                         if(gamestateMulti >=16)
                         {
                           gamestateMulti = 1;
-                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); 
+                          setPaused(false); setRewind(false); setFfwd(false); setRealtime(false);
                         }
                       }else{
                         gamestateMulti = 2;
@@ -1311,7 +1354,7 @@
                 Stats
               </button>
             </div>
-            <h1 id='title'>Leaderboard</h1>
+            <h2 id='leader'>Leaderboard</h2>
             <table id='player'>
               <thead>
                 <tr>{renderTableHeader()}</tr>
@@ -1333,7 +1376,7 @@
             <button onClick={() => { resetGamestate(); cacheGame(1); }}>
               {<i>triggerMiscFunctions</i>}
             </button>
-            <button onClick={() => { 
+            <button onClick={() => {
               loadedSnakeImage = false;
               fakeGamestate = true;
               updateGameState();
@@ -1355,7 +1398,7 @@
               drawServerDown(); }}>
               {<i>triggerDrawGameboard</i>}
             </button>
-            <button onClick={() => { 
+            <button onClick={() => {
               gameCurrStatsUser = {
                 id: 1,
                 username: "",
@@ -1364,9 +1407,9 @@
                 no_of_kills: "",
                 score: "",
                 positions:""
-              }; 
+              };
               gameCurrStatsDivision = gameCurrStatsDivisionEmpty;
-              drawStats(); 
+              drawStats();
 
               gameCurrStatsDivision =
               {
