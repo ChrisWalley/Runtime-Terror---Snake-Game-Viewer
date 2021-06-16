@@ -2,7 +2,6 @@
   import axios from 'axios';
   import Carousel from 'react-bootstrap/Carousel';
   import Chart from "react-apexcharts";
-import { read } from "fs/promises";
 
 
   const PlayerURL = 'https://marker.ms.wits.ac.za/snake/agents/0'
