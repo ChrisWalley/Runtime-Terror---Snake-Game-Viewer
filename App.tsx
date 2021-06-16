@@ -1,17 +1,21 @@
   import React, { useState, useEffect } from "react";
   import axios from 'axios';
   import Carousel from 'react-bootstrap/Carousel';
+  import Chart from "react-apexcharts";
+
 
   const PlayerURL = 'https://marker.ms.wits.ac.za/snake/agents/0'
   const PlayerStatsURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/Stats.json'
   const DivisionURL = 'https://marker.ms.wits.ac.za/snake/games/0/count'
   const DivisionStatsURL = 'https://raw.githubusercontent.com/ChrisWalley/Runtime-Terror---Snake-Game-Viewer/main/FakeJSON/DivisionStats.json'
   const DivisionGamestatesURL = 'https://marker.ms.wits.ac.za/snake/games/0/'
+  const LeagueDataURl = 'https://marker.ms.wits.ac.za/snake/leagues'
 
   const parseCoords = require('./parseCoords');
   const parseGamestate = require('./parseGamestate');
   const sortSnakes = require('./sortSnakes');
   const canvasHeight = 500;
+  const statsCanvasHeight = canvasHeight-122;
   const canvasWidth = 470;
 
   const blockSize = 9;
@@ -25,6 +29,11 @@
   var loadedSnakeImage = false;
   var loadedAllAppleImages = false;
   var loadedAppleImagesCounter = 0;
+
+  var leagueNames = ["League 11","League 10","League 9","League 8","League 7","League 6","League 5","League 4","DSA League","Closed League","Open League"];
+
+  var divisionPlanets = ["Alderaan","Corellia","Dantooine","Kessel","Tatooine","Yavin 4","Kashyyyk","Bespin","Dagobah","Hoth"
+                         ,"Fondor","Mandalore","Endor","Coruscant","Naboo","Starkiller Base","Death Star"];
 
   var loadingBarSnake =
   {
@@ -79,7 +88,8 @@
     max_length: "",
     avg_length: "",
     no_of_kills: "",
-    score: ""
+    score: "",
+    positions:""
   };
 
   var gameCurrStatsDivision =
@@ -98,7 +108,8 @@
     max_length: "",
     avg_length: "",
     no_of_kills: "",
-    score: ""
+    score: "",
+    positions:""
   };
 
   var gameCurrStatsDivisionEmpty =
@@ -137,9 +148,52 @@
   var gameServerUp = false;
   var gameSelectedDivision = 0;
   var gameSelectedDivisionStr = "Division 0";
+  var gameSelectedLeague = 0;
+  var gameSelectedLeagueStr = "League 0";
   var gameGamestates = { count: 0, states: new Array(0) };
 
+  var testing = false;
   var fakeGamestate = false;
+  var fakeNumArr:number [] = new Array(0);
+
+  var statsUserGraph = {
+            options: {
+              chart: {
+                id: "statsChart",
+                toolbar: {
+                  show: false
+                }
+              },
+              xaxis: {
+                categories: fakeNumArr
+              },
+              yaxis: {
+                labels: {
+                  formatter: (value) => { return ""+parseInt(value) }
+              },
+              title: {
+                text: "Rank",
+                align: 'left',
+                margin: 10,
+                offsetX: 0,
+                offsetY: 0,
+                floating: false,
+                style: {
+                  fontSize:  '14px',
+                  fontWeight:  'bold',
+                  fontFamily:  undefined,
+                  color:  '#263238'
+                },
+                }
+              }
+            },
+            series: [
+              {
+                name: "series",
+                data: fakeNumArr
+              }
+            ]
+          };
 
   function App() {
 
@@ -164,6 +218,8 @@
     const [serverUp, setServerUp] = useState(gameServerUp);
     const [selectedDivision, setSelectedDivision] = useState(gameSelectedDivision);
     const [selectedDivisionStr, setSelectedDivisionStr] = useState(gameSelectedDivisionStr);
+    const [selectedLeague, setSelectedLeague] = useState(gameSelectedLeague);
+    const [selectedLeagueStr, setSelectedLeagueStr] = useState(gameSelectedLeagueStr);
     const [isGameCached, setIsGameCached] = useState(false);
     const [readEntireGame, setReadEntireGame] = useState(false);
 
@@ -173,6 +229,7 @@
     const [currentStatsUser, setCurrentStatsUser] = useState(gameCurrStatsUser)
     const [currentStatsDivision, setCurrentStatsDivision] = useState(gameCurrStatsDivision)
     const [divisions, setDivisions] = useState(new Array(0))
+    const [league, setLeague] = useState(new Array(0))
     const [divisionInfo, setDivisionInfo] = useState(gameDivisionInfo)
     const [gamestates, setGamestates] = useState(gameGamestates)
 
@@ -250,6 +307,29 @@
     }, [serverDownContext2]);
 
     useEffect(() => {
+      initVars();
+      getConfig();
+
+      let isMounted = true;               // note mutable flag
+      getLeagueData().then(response => {
+        if (isMounted)// add conditional check
+        {
+          setServerUp(true);
+          var n = response.data.count;
+          var leagueNamesArr = new Array(n)
+          for (var i = 0; i < n; i++) {
+            leagueNamesArr[i] = { id: i, league: (i > leagueNames.length ? "" : leagueNames[leagueNames.length-i-1]) };
+          }
+          setLeague(leagueNamesArr);
+        }
+      }).catch(err => alert("Error: Could not retrieve league information from the Snake Server\n"+err))
+      
+      return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
+
+
+    }, []);
+
+    useEffect(() => {
       loadImages();
       initVars();
       getConfig();
@@ -262,7 +342,7 @@
           var n = response.data["count"];
           var divNames = new Array(n)
           for (var i = 0; i < n; i++) {
-            divNames[i] = { id: i, division: "Division " + i };
+            divNames[i] = { id: i, division: "Division " + i +(i > divisionPlanets.length ? "" : " - "+divisionPlanets[divisionPlanets.length-i-1]) };
           }
           setDivisions(divNames);
           setInterval(updateGameState, config.game_speed);
@@ -274,6 +354,7 @@
 
 
     }, []);
+
 
     useEffect(() => {
       let isMounted = true;               // note mutable flag
@@ -298,10 +379,10 @@
             player = response.data[i];
             playerStatsDict[player.username] = player;
           }
-
           setPlayersStats(playerStatsDict);
         }     // add conditional check
       }).catch(err => alert("Error: Could not retrieve player statistics from the Snake Server\n"+err))
+
 
       getDivisionStatsData().then(response => {
         if (isMounted) {
@@ -311,7 +392,6 @@
             division = response.data[i];
             divisionStatsDict[division.division] = division;
           }
-
           setDivisionStats(divisionStatsDict);
         }     // add conditional check
       }).catch(err => alert("Error: Could not retrieve division statistics from the Snake Server\n"+err))
@@ -374,7 +454,6 @@
       if (viewerContext && gameServerUp) {
         viewerContext.fillStyle = gameColours.background;     //Clears area
         viewerContext.fillRect(0, 0, canvasWidth, canvasHeight);
-        viewerContext.fillRect(startX, startY + config.game_width * blockSize + 20, config.game_height * blockSize, 10);
 
         if (gameState && gameState !== null && gameState.state >= 0) {
           progBar =
@@ -494,9 +573,7 @@
               viewerContext.closePath();
             }
           }
-          
 
-          
           //gamestate multiplier
           if(gamestateMulti!=1)
           {
@@ -506,7 +583,7 @@
 
             viewerContext.fillText(""+gamestateMulti+"x", startX + 15, startY + 25);
           }
-          
+
           if (loadedSnakeImage) {
             viewerContext.drawImage(snakeHeadImg, progBar.x + (currentGamestate / config.gameFrames) * (config.game_height * blockSize) - 3, progBar.y - 2);
           }
@@ -595,11 +672,10 @@
         if (statsContext) {
 
           statsContext.fillStyle = gameColours.background;     //Clears area
-          statsContext.fillRect(0, 0, canvasWidth, canvasHeight);
-          statsContext.fillRect(startX, startY + config.game_width * blockSize + 20, config.game_height * blockSize, 10);
+          statsContext.fillRect(0, 0, canvasWidth, statsCanvasHeight);
 
           statsContext.strokeStyle = gameColours.border;          //Draws square around viewer and progress bar
-          statsContext.strokeRect(startX, startY, config.game_width * blockSize, config.game_height * blockSize);
+          statsContext.strokeRect(startX, startY, canvasWidth-2*startX, statsCanvasHeight-2*startY);
 
           statsContext.font = "30px Verdana";
 
@@ -670,7 +746,7 @@
         {
           scoreboardContext.fillStyle = colorDict[sortedSnakesByScore[i].name];
 
-          var offset = yOffset*3+5;
+          var offset = yOffset*3+3;
 
           scoreboardContext.fillText(sortedSnakesByScore[i].score,startX+ 2*blockSize,startY+offset*blockSize);
           scoreboardContext.fillText(sortedSnakesByScore[i].length,startX+ 9*blockSize,startY+offset*blockSize);
@@ -679,47 +755,9 @@
 
           yOffset++;
         }
-
-        /*
-        var snake0YOffset = 1*3 + 5;
-        var snake1YOffset = 2*3 + 5;
-        var snake2YOffset = 3*3 + 5;
-        var snake3YOffset = 4*3 + 5;
+        scoreboardContext.fillStyle = gameColours.border;
+        scoreboardContext.fillText("Game state: "+gameState.state,startX+ 2*blockSize,startY+20*blockSize);
         
-        var snake0YOffset = (-1)*(gameState.snake0Position)*3 + 5;
-        var snake1YOffset = (-1)*(gameState.snake1Position)*3 + 5;
-        var snake2YOffset = (-1)*(gameState.snake2Position)*3 + 5;
-        var snake3YOffset = (-1)*(gameState.snake3Position)*3 + 5;
-        
-
-        scoreboardContext.fillStyle = gameColours.snake0;
-
-        scoreboardContext.fillText(gameState.snake0.score,startX+ 2*blockSize,startY+(snake0YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake0.length,startX+ 9*blockSize,startY+(snake0YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake0.kills,startX+ 16*blockSize,startY+(snake0YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake0.name,startX+ 23*blockSize,startY+(snake0YOffset)*blockSize);
-
-        scoreboardContext.fillStyle = gameColours.snake1;
-
-        scoreboardContext.fillText(gameState.snake1.score,startX+ 2*blockSize,startY+(snake1YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake1.length,startX+ 9*blockSize,startY+(snake1YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake1.kills,startX+ 16*blockSize,startY+(snake1YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake1.name,startX+ 23*blockSize,startY+(snake1YOffset)*blockSize);
-
-        scoreboardContext.fillStyle = gameColours.snake2;
-
-        scoreboardContext.fillText(gameState.snake2.score,startX+ 2*blockSize,startY+(snake2YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake2.length,startX+ 9*blockSize,startY+(snake2YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake2.kills,startX+ 16*blockSize,startY+(snake2YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake2.name,startX+ 23*blockSize,startY+(snake2YOffset)*blockSize);
-
-        scoreboardContext.fillStyle = gameColours.snake3;
-
-        scoreboardContext.fillText(gameState.snake3.score,startX+ 2*blockSize,startY+(snake3YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake3.length,startX+ 9*blockSize,startY+(snake3YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake3.kills,startX+ 16*blockSize,startY+(snake3YOffset)*blockSize);
-        scoreboardContext.fillText(gameState.snake3.name,startX+ 23*blockSize,startY+(snake3YOffset)*blockSize);
-        */
 
       }
     }
@@ -794,6 +832,8 @@
 
     function updateGameState() {
       //This will fetch the current game state from the server
+
+      
 
       if(fakeGamestate)
       {
@@ -882,11 +922,31 @@
     }
     }
     }
-
+    //also draws stats graph
     function handleUsernameClick(e) {
       setIndex(1);
       setCurrentStatsDivision(gameCurrStatsDivisionEmpty);
       setCurrentStatsUser(playersStats[e]);
+      
+      if(!testing && serverUp)
+      {
+        var positions = playersStats[e].positions.split(',');
+        let xAxisArr = new Array(positions.length);
+        let yAxisArr:number[] = new Array(positions.length);
+        console.log(playersStats[e].username);
+  
+        for(var counter =0;counter < positions.length; counter++)
+        {
+          xAxisArr.push(""+counter);
+          yAxisArr[counter] = parseInt(positions[counter]);
+        }  
+        statsUserGraph.series = [
+          {
+            name: "series",
+            data: yAxisArr
+          }
+        ];
+      }      
     }
 
     function handleDivisionStatsClick(e) {
@@ -901,6 +961,12 @@
       setSelectedDivisionStr("Division "+e);
     }
 
+    function handleDLeagueClick(e) {
+      setIndex(0);
+      setSelectedLeague(e);
+      setSelectedLeagueStr("League "+e);
+    }
+
     function initVars() {
       gamePaused = paused;
       gameFfwd = ffwd;
@@ -908,6 +974,7 @@
       gameRealtime = realtime;
       gameDrawCells = drawCells;
       gameServerUp = serverUp;
+
     }
 
     function loadImages()
@@ -952,6 +1019,11 @@
 
     const getDivisionStatsData = async () => {
       const response = await axios.get(DivisionStatsURL)
+      return response;
+    }
+
+    const getLeagueData = async () => {
+      const response = await axios.get(LeagueDataURl);
       return response;
     }
 
@@ -1028,13 +1100,38 @@
       }
     }
 
+    const renderLeagueSelect = () => {
+      if (serverUp) {
+        return (
+          <div>
+            {['league'].map(key => (
+              <select key={key} value={selectedLeagueStr} onChange={logChange}>
+                {league.map(({ [key]: value }) => <option key={value}>{value}</option>)}
+              </select>
+            ))}
+          </div>
+        )
+      }
+      else {
+        return (
+          <div>
+            {['league'].map(key => (
+              <select key={key}>
+                {<option key={0}>{"Connecting..."}</option>}
+              </select>
+            ))}
+          </div>
+        )
+      }
+    }
+
     return (
       <>
         <header>
           <nav>
             <div className="logo">
               <h4>Runtime</h4>
-              <h4 onClick={() => setServerUp(prevState => !prevState)}>Terror</h4>
+              <h4 onClick={() => {testing = true; setServerUp(prevState => !prevState)}}>Terror</h4>
             </div>
             <ul className="nav-links">
               <li><a href="">Watch</a></li>
@@ -1099,17 +1196,28 @@
                     }}>{serverUp ? "Statistics" : "Connecting to server..."}</h2>
                     <div
                       className="centered">
-                      {serverUp ? <canvas
+                      {serverUp ? <div>
+                        <canvas
                         id="stats"
                         ref={statsRef}
                         width={canvasWidth}
-                        height={canvasHeight}
+                        height={statsCanvasHeight}
                         style={{
                           border: '2px solid #000',
                           marginTop: 10,
                           marginBottom: 10
                         }}
-                      ></canvas> : <canvas
+                      ></canvas> 
+                      {!testing && serverUp ?
+                      <Chart
+                      options={statsUserGraph.options}
+                      series={statsUserGraph.series}
+                      background= '#fff'
+                      type="line"
+                      width={canvasWidth}
+                      height="100"
+                    /> : null}
+                      </div>: <canvas
                         id="serverDown2"
                         ref={serverDownRef2}
                         width={canvasWidth}
@@ -1121,6 +1229,7 @@
                         }}
                       ></canvas>}
                     </div>
+                    
                   </div>
 
                 </Carousel.Item>
@@ -1163,6 +1272,10 @@
 
           </div>
           <div className="column right" style={{ float: 'right' }}>
+          <h2>League</h2>
+            {renderLeagueSelect()}
+            <div style={{ marginBottom: '3cm' }}>
+            </div>
             <h2>Division</h2>
             {renderDivisionSelect()}
             <div style={{ marginBottom: '3cm' }}>
@@ -1180,7 +1293,7 @@
               </tbody>
             </table>
             <div style={{ visibility: "collapse" }} id="hiddenButtons" className="buttons">
-              <button onClick={() => { handleUsernameClick("1"); handleDivisionClick(1); }}>
+              <button onClick={() => { testing = true; handleUsernameClick("1"); handleDivisionClick(1); }}>
                 {<i>triggerClickFunctions</i>}
               </button>
             </div>
@@ -1221,7 +1334,8 @@
                 max_length: "",
                 avg_length: "",
                 no_of_kills: "",
-                score: ""
+                score: "",
+                positions:""
               }; 
               gameCurrStatsDivision = gameCurrStatsDivisionEmpty;
               drawStats(); 
@@ -1238,7 +1352,7 @@
               drawStats(); }}>
               {<i>triggerDrawStats</i>}
             </button>
-            <button onClick={() => { handleUsernameClick('Easy'); handleDivisionClick(0) }}>
+            <button onClick={() => { testing = true;handleUsernameClick('Easy'); handleDivisionClick(0) }}>
               {<i>triggerStatsUser</i>}
             </button>
             <button onClick={() => { handleDivisionStatsClick(1); }}>
