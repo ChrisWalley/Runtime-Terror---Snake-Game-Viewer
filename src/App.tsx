@@ -180,6 +180,7 @@ import { read } from "fs/promises";
   var addedClickEvent = false;
   var viewerX = 0;
   var viewerY = 0;
+  var rankGraphVis = false;
 
   var statsUserGraph = {
             options: {
@@ -535,7 +536,7 @@ import { read } from "fs/promises";
               {
                 appleIndex=1;
               }
-              viewerContext.drawImage(appleImagesArr[appleIndex], startX + appleX * blockSize - blockSize / 3, startY + appleY * blockSize - blockSize / 3);
+              viewerContext.drawImage(appleImagesArr[appleIndex], startX + appleX * blockSize - blockSize / 3, startY + appleY * blockSize - blockSize / 2);
             }
             else {
               viewerContext.fillStyle = gameColours.apple;
@@ -721,7 +722,7 @@ import { read } from "fs/promises";
     function handleMousemove(e) {
       e.preventDefault();
       e.stopPropagation();
-      var x = e.pageX - viewerX - 630;
+      var x = e.pageX - viewerX - 460;
       var y = e.pageY - viewerY - 170;
       if (y > replayBox.y && y < replayBox.y + replayBox.height
         && x > replayBox.x && x < replayBox.x + replayBox.width) {
@@ -737,7 +738,7 @@ import { read } from "fs/promises";
     function handleMouseClick(event) {
 
       
-      var x = event.pageX - viewerX - 630;
+      var x = event.pageX - viewerX - 460;
       var y = event.pageY - viewerY - 170;
       
       if (y > replayBox.y && y < replayBox.y + replayBox.height
@@ -1255,6 +1256,7 @@ import { read } from "fs/promises";
             data: yAxisArr
           }
         ];
+        rankGraphVis = true;
       }
     }
 
@@ -1262,6 +1264,7 @@ import { read } from "fs/promises";
       setIndex(1);
       setCurrentStatsUser(gameCurrStatsUserEmpty);
       setCurrentStatsDivision(divisionStats["Division "+selectedDivision]);
+      rankGraphVis = false;
     }
 
     function handleDivisionClick(e) {
@@ -1346,7 +1349,7 @@ import { read } from "fs/promises";
         return players && players.map(({ id, name, score, currentGame }) => {
           return (
             <tr key={id}>
-              <td>{Math.round(10000 * score) / 10000}</td>
+              <td >{Math.round(10000 * score) / 10000}</td>
               <td className='opration'>
                 <a className='button' onClick={() => handleUsernameClick(name)}>{name}</a>
               </td>
@@ -1377,6 +1380,7 @@ import { read } from "fs/promises";
       setSelectedDivisionStr(event.target.value);
       setWatchingCachedGame(false);
       gamestateMulti = 1;
+      setIndex(0);
     };
 
     const renderDivisionSelect = () => {
@@ -1415,10 +1419,11 @@ import { read } from "fs/promises";
 
 </div>
             <ul className="nav-links">
-              <li><a href="">Watch</a></li>
               <li><a href="https://snake.wits.ai/">Home</a></li>
               <li><a href="https://snake.wits.ai/docs">Docs</a></li>
-              <li><a href="https://snake.wits.ai/downloads">Downloads</a></li>
+              <li><a href="https://snake.wits.ai/download">Download</a></li>
+              <li><a href="https://snake.wits.ai/submit">Submit</a></li>
+              <li><a href="">Watch</a></li>
               <li><a href="https://snake.wits.ai/help">Help</a></li>
             </ul>
         </nav>
@@ -1497,6 +1502,7 @@ import { read } from "fs/promises";
                       type="line"
                       width={canvasWidth}
                       height="100"
+                      style={{ visibility: rankGraphVis ? "visible" : "hidden" }}
                     /> : null}
                       </div>: <canvas
                         id="serverDown2"
@@ -1561,8 +1567,10 @@ import { read } from "fs/promises";
               </button>
             </div>
             <h2 id='leader'>Leaderboard</h2>
-            <table id='player'>
-              <thead>
+
+            <table id='player' style={{marginLeft: 70,}}>
+              <h2></h2>
+              <thead >
                 <tr>{renderTableHeader()}</tr>
               </thead>
               <tbody>
