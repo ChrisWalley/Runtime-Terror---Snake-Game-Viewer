@@ -269,7 +269,6 @@
           viewerRef.current.addEventListener('click', handleMouseClick, false);
           viewerX = viewerRef.current.offsetLeft + viewerRef.current.clientLeft;
           viewerY = viewerRef.current.offsetTop + viewerRef.current.clientTop;
-          console.log(viewerX+" - "+viewerY);
           addedClickEvent = true;
         }
         const renderCtx = viewerRef.current.getContext('2d');
@@ -1035,8 +1034,6 @@
 
     function switchToCachedGame()
     {
-      console.log("triggered "+gameIsGameCached);
-
       if(isGameCached || gameIsGameCached)
       {
 
