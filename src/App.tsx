@@ -136,6 +136,9 @@
     height: 0
   };
 
+
+  var updateGameStateLoopRef;
+  var checkForNewGameLoopRef;
   var gamePaused = false;
   var gameFfwd = false;
   var gameRewind = false;
@@ -145,7 +148,8 @@
   var gameSelectedDivision = 0;
   var gameSelectedDivisionStr = "Division 0";
   var gameGamestates = { count: 0, states: new Array(0) };
-
+  var gameGameNumber = -1;
+  var gameGetNewGameTrigger = 0;
   var testing = false;
   var fakeGamestate = false;
   var fakeNumArr:number [] = new Array(0);
@@ -223,6 +227,8 @@
     const [divisions, setDivisions] = useState(new Array(0))
     const [divisionInfo, setDivisionInfo] = useState(gameDivisionInfo)
     const [gamestates, setGamestates] = useState(gameGamestates)
+    const [gameNumber, setGameNumber] = useState(gameGameNumber)
+    const [getNewGameTrigger, setNewGameTrigger] = useState(gameGetNewGameTrigger)
 
 
     useEffect(() => {
@@ -313,7 +319,7 @@
             divNames[i] = { id: i, division: "Division " + i +(i > divisionPlanets.length ? "" : " - "+divisionPlanets[divisionPlanets.length-i-1]) };
           }
           setDivisions(divNames);
-          setInterval(updateGameState, config.game_speed);
+          updateGameStateLoopRef = setInterval(updateGameState, config.game_speed);
           console.log("Done");
         }
       }).catch(err => alert("Error: Could not retrieve division information from the Snake Server\n"+err))
@@ -322,6 +328,10 @@
 
 
     }, []);
+
+    useEffect(() => {
+      gameGetNewGameTrigger = getNewGameTrigger;
+    },[getNewGameTrigger]);
 
     useEffect(() => {
       let isMounted = true;               // note mutable flag
@@ -364,7 +374,7 @@
         }     // add conditional check
       }).catch(err => alert("Error: Could not retrieve division statistics from the Snake Server\n"+err))
       return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
-    }, [selectedDivision]);
+    }, [selectedDivision, getNewGameTrigger]);
 
     useEffect(() => {
       gamePaused = paused;
@@ -378,7 +388,8 @@
       gameSelectedDivisionStr = selectedDivisionStr;
       gameDivisionInfo = divisionInfo;
       gameGamestates = gamestates;
-    }, [paused, ffwd, rewind, realtime, drawCells, currentStatsUser, currentStatsDivision, selectedDivision,selectedDivisionStr, divisionInfo, gamestates]);
+      gameGameNumber = gameNumber;
+    }, [paused, ffwd, rewind, realtime, drawCells, currentStatsUser, currentStatsDivision, selectedDivision,selectedDivisionStr, divisionInfo, gamestates,gameNumber]);
 
     useEffect(() => {
       gameServerUp = serverUp;
@@ -833,8 +844,18 @@
         let tempGameStateArr = JSON.parse(sessionStorage.getItem("cachedGame")!);
         if (tempGameStateArr && tempGameStateArr !== null) {
           resetGamestate();
-          gameGamestates = tempGameStateArr;
+          setGamestates(tempGameStateArr);
         }
+        if(checkForNewGameLoopRef)
+        {
+          clearInterval(checkForNewGameLoopRef);
+        }
+        if(updateGameStateLoopRef)
+        {
+          clearInterval(updateGameStateLoopRef);
+        }
+        updateGameStateLoopRef = setInterval(updateGameState, config.game_speed);
+
       }
     }
 
@@ -865,10 +886,19 @@
       currentGamestate = 0;
     }
 
+    function checkForNewGame()
+    {
+      setNewGameTrigger(gameGetNewGameTrigger+1);
+      if(Math.round(gameGamestates.states[currentGamestate]["globalIndex"]/config.gameFrames) != gameGameNumber)
+      {
+        setGameNumber(Math.round(gameGamestates.states[currentGamestate]["globalIndex"]/config.gameFrames))
+        clearInterval(checkForNewGameLoopRef);
+        updateGameStateLoopRef = setInterval(updateGameState, config.game_speed);
+      }
+    }
+
     function updateGameState() {
       //This will fetch the current game state from the server
-
-      
 
       if(fakeGamestate)
       {
@@ -892,16 +922,21 @@
           if(currentGamestate>config.gameFrames)
           {
             setGameRef(prevState => (prevState + 1));
-          cacheGame(gameGamestates);
-          resetGamestate();
+            cacheGame(gameGamestates);
+            resetGamestate();
+            clearInterval(updateGameStateLoopRef);
+            checkForNewGameLoopRef = setInterval(checkForNewGame, 5000);
           }
         }
-      
       
       if (gameGamestates.count > 0) {
         if(!gameGamestates.states[currentGamestate] || gameGamestates.states[currentGamestate]===null)
         {
           return;
+        }
+        if(Math.round(gameGamestates.states[currentGamestate]["globalIndex"]/config.gameFrames) != gameGameNumber)
+        {
+          setGameNumber(Math.round(gameGamestates.states[currentGamestate]["globalIndex"]/config.gameFrames))
         }
         gameState = parseGamestate(gameGamestates.states[currentGamestate]["state"], gameGamestates.states[currentGamestate]["index"]);
         if(!gameState || gameState===null)
@@ -983,8 +1018,6 @@
     function handleDivisionStatsClick(e) {
       setIndex(1);
       setCurrentStatsUser(gameCurrStatsUserEmpty);
-      console.log(divisionStats);
-      console.log(selectedDivision);
       setCurrentStatsDivision(divisionStats["Division "+selectedDivision]);
     }
 
@@ -1163,7 +1196,7 @@
                   <div>
                     <h2 className="centered" style={{
                       marginTop: 10
-                    }}>{serverUp ? "Current Game" : "Connecting to server..."}</h2>
+                    }}>{serverUp && (gameGameNumber!=-1)? "Current Game ("+gameGameNumber+")" : "Connecting to server..."}</h2>
                     <div
                       className="centered">
                       {serverUp ? <canvas
