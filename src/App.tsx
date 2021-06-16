@@ -683,11 +683,11 @@ import { read } from "fs/promises";
           var waitStr = "Waiting for next game";
 
           waitingCount++;
-          if(waitingCount > 40)
+          if(waitingCount > 40 || testing)
           {
             waitingCount = 0;
             dotCount++;
-            if(dotCount > 3)
+            if(dotCount > 3 || testing)
             {
               dotCount = 0;
             }
@@ -720,30 +720,18 @@ import { read } from "fs/promises";
     }
 
     function handleMousemove(e) {
-      e.preventDefault();
-      e.stopPropagation();
       var x = e.pageX - viewerX - 460;
       var y = e.pageY - viewerY - 170;
-      if (y > replayBox.y && y < replayBox.y + replayBox.height
-        && x > replayBox.x && x < replayBox.x + replayBox.width) {
-        mouseOver = true;
-      }
-      else
-      {
-        mouseOver = false;
-      }
-      
+      mouseOver = (y > replayBox.y && y < replayBox.y + replayBox.height && x > replayBox.x && x < replayBox.x + replayBox.width);
     }
 
     function handleMouseClick(event) {
-
       
       var x = event.pageX - viewerX - 460;
       var y = event.pageY - viewerY - 170;
       
       if (y > replayBox.y && y < replayBox.y + replayBox.height
                  && x > replayBox.x && x < replayBox.x + replayBox.width) {
-                 console.log('clicked replayBox');
                  gamePaused = false;
                  gameRewind = false;
                  gameFfwd = false;
@@ -752,7 +740,7 @@ import { read } from "fs/promises";
                  setRewind(false); 
                  setFfwd(false); 
                  setRealtime(false); 
-                 switchToCachedGameFromCanvas();
+                 switchToCachedGame();
              }
     }
     
@@ -966,7 +954,7 @@ import { read } from "fs/promises";
           scoreboardContext.fillText("Time started:    "+timeDate,startX+ 2*blockSize,startY+30*blockSize);
         }
         else if(gameWaitingForNewGame){
-          
+
 
           scoreboardContext.fillStyle = gameColours.background;     //Clears area
           scoreboardContext.fillRect(0,0, canvasWidth-110, canvasHeight-100);
@@ -1046,37 +1034,11 @@ import { read } from "fs/promises";
       }
     }
 
-    function switchToCachedGameFromButton()
-    {
-      console.log("triggered "+isGameCached);
-
-      if(isGameCached)
-      {
-
-        let tempGameStateArr = JSON.parse(sessionStorage.getItem("cachedGame")!);
-        if (tempGameStateArr && tempGameStateArr !== null) {
-          resetGamestate();
-          setGamestates(tempGameStateArr);
-          setWatchingCachedGame(true);
-          setReadEntireGame(false);
-        }
-        if(checkForNewGameLoopRef)
-        {
-          setWaitingForNewGame(false);
-          clearInterval(checkForNewGameLoopRef);
-        }
-        if(updateGameStateLoopRef)
-        {
-          clearInterval(updateGameStateLoopRef);
-        }
-        updateGameStateLoopRef = setInterval(updateGameState, config.game_speed);
-      }
-    }
-    function switchToCachedGameFromCanvas()
+    function switchToCachedGame()
     {
       console.log("triggered "+gameIsGameCached);
 
-      if(gameIsGameCached)
+      if(isGameCached || gameIsGameCached)
       {
 
         let tempGameStateArr = JSON.parse(sessionStorage.getItem("cachedGame")!);
@@ -1552,7 +1514,7 @@ import { read } from "fs/promises";
                   </div>
                   <div style={{ visibility: (index === 0 && serverUp) ? "visible" : "hidden" }} id="viewerLookControls" className="buttonscenteredSingle">
                     <button onClick={() => { setDrawCells(prevState => !prevState) }}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
-                    <button style={{ visibility: (index === 0 && serverUp && isGameCached && !watchingCachedGame) ? "visible" : "collapse" }} onClick={() => { setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); switchToCachedGameFromButton(); }}><i className="material-icons">settings_backup_restore</i></button>
+                    <button style={{ visibility: (index === 0 && serverUp && isGameCached && !watchingCachedGame) ? "visible" : "collapse" }} onClick={() => { setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); switchToCachedGame(); }}><i className="material-icons">settings_backup_restore</i></button>
                   </div>
             </div>
 
@@ -1577,7 +1539,7 @@ import { read } from "fs/promises";
               </tbody>
             </table>
             <div style={{ visibility: "collapse" }} id="hiddenButtons" className="buttons">
-              <button onClick={() => { testing = true; handleUsernameClick("1"); handleDivisionClick(1); }}>
+              <button onClick={() => { testing = true; handleUsernameClick("1"); handleDivisionClick(1);}}>
                 {<i>triggerClickFunctions</i>}
               </button>
             </div>
@@ -1607,6 +1569,21 @@ import { read } from "fs/promises";
               updateGameState();
               drawGameboard();
               drawScoreboard();
+              gameState.state = -1;
+              gameWaitingForNewGame = true;
+              testing = true;
+              gamestateMulti = 2;
+              drawGameboard();
+              drawScoreboard();
+
+              let fakeEvent = {
+                pageX:610,
+                pageY:510
+              };
+
+              handleMousemove(fakeEvent);
+              handleMouseClick(fakeEvent);
+
               loadingBarSnake.count = 8;
               drawServerDown(); }}>
               {<i>triggerDrawGameboard</i>}
