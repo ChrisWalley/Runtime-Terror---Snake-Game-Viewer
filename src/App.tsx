@@ -2,6 +2,7 @@
   import axios from 'axios';
   import Carousel from 'react-bootstrap/Carousel';
   import Chart from "react-apexcharts";
+import { read } from "fs/promises";
 
 
   const PlayerURL = 'https://marker.ms.wits.ac.za/snake/agents/0'
@@ -53,7 +54,6 @@
 
   var gamestateMulti = 1;
 
-  let gameStateArr = {};
 
   var startedViewingGamestate = 0;
 
@@ -137,6 +137,20 @@
     height: 0
   };
 
+  var replayBox =
+  {
+    x: startX + 15*blockSize,
+    y: startY + 35*blockSize,
+    width: 20*blockSize,
+    height: 5*blockSize
+  }
+
+  var mouseOver = false;
+
+
+
+  var updateGameStateLoopRef;
+  var checkForNewGameLoopRef;
   var gamePaused = false;
   var gameFfwd = false;
   var gameRewind = false;
@@ -146,10 +160,27 @@
   var gameSelectedDivision = 0;
   var gameSelectedDivisionStr = "Division 0";
   var gameGamestates = { count: 0, states: new Array(0) };
-
+  var gameGameNumber = -1;
+  var gameGetNewGameTrigger = 0;
+  var gameWatchingCachedGame = false;
+  var gameReadEntireGame = false;
+  var gameWaitingForNewGame = false;
   var testing = false;
   var fakeGamestate = false;
   var fakeNumArr:number [] = new Array(0);
+  var globalIndexOffset = 0;
+  var gameIsGameCached = false;
+
+  var cachedSortedSnakesByScore = new Array(4);
+  var cachedSortedSnakesByScoreCol = new Array(4);
+
+  var waitingCount = 0;
+  var dotCount = 0;
+
+  var addedClickEvent = false;
+  var viewerX = 0;
+  var viewerY = 0;
+  var rankGraphVis = false;
 
   var statsUserGraph = {
             options: {
@@ -213,22 +244,35 @@
     const [serverUp, setServerUp] = useState(gameServerUp);
     const [selectedDivision, setSelectedDivision] = useState(gameSelectedDivision);
     const [selectedDivisionStr, setSelectedDivisionStr] = useState(gameSelectedDivisionStr);
-    const [isGameCached, setIsGameCached] = useState(false);
-    const [readEntireGame, setReadEntireGame] = useState(false);
+    const [isGameCached, setIsGameCached] = useState(gameIsGameCached);
+    const [readEntireGame, setReadEntireGame] = useState(gameReadEntireGame);
 
-    const [players, setPlayers] = useState([])
-    const [playersStats, setPlayersStats] = useState({})
-    const [divisionStats, setDivisionStats] = useState({})
-    const [currentStatsUser, setCurrentStatsUser] = useState(gameCurrStatsUser)
-    const [currentStatsDivision, setCurrentStatsDivision] = useState(gameCurrStatsDivision)
-    const [divisions, setDivisions] = useState(new Array(0))
-    const [divisionInfo, setDivisionInfo] = useState(gameDivisionInfo)
-    const [gamestates, setGamestates] = useState(gameGamestates)
+    const [players, setPlayers] = useState([]);
+    const [playersStats, setPlayersStats] = useState({});
+    const [divisionStats, setDivisionStats] = useState({});
+    const [currentStatsUser, setCurrentStatsUser] = useState(gameCurrStatsUser);
+    const [currentStatsDivision, setCurrentStatsDivision] = useState(gameCurrStatsDivision);
+    const [divisions, setDivisions] = useState(new Array(0));
+    const [divisionInfo, setDivisionInfo] = useState(gameDivisionInfo);
+    const [gamestates, setGamestates] = useState(gameGamestates);
+    const [gameNumber, setGameNumber] = useState(gameGameNumber);
+    const [getNewGameTrigger, setNewGameTrigger] = useState(gameGetNewGameTrigger);
+    const [watchingCachedGame, setWatchingCachedGame] = useState(gameWatchingCachedGame);
+    const [waitingForNewGame,setWaitingForNewGame] = useState(gameWaitingForNewGame);
 
 
     useEffect(() => {
 
       if (viewerRef.current) {
+        if(!addedClickEvent)
+        {
+          viewerRef.current.addEventListener('mousemove', handleMousemove, false);
+          viewerRef.current.addEventListener('click', handleMouseClick, false);
+          viewerX = viewerRef.current.offsetLeft + viewerRef.current.clientLeft;
+          viewerY = viewerRef.current.offsetTop + viewerRef.current.clientTop;
+          console.log(viewerX+" - "+viewerY);
+          addedClickEvent = true;
+        }
         const renderCtx = viewerRef.current.getContext('2d');
 
         if (renderCtx) {
@@ -314,8 +358,7 @@
             divNames[i] = { id: i, division: "Division " + i +(i > divisionPlanets.length ? "" : " - "+divisionPlanets[divisionPlanets.length-i-1]) };
           }
           setDivisions(divNames);
-          setInterval(updateGameState, config.game_speed);
-          console.log("Done");
+          updateGameStateLoopRef = setInterval(updateGameState, config.game_speed);
         }
       }).catch(err => alert("Error: Could not retrieve division information from the Snake Server\n"+err))
 
@@ -323,6 +366,11 @@
 
 
     }, []);
+
+    useEffect(() => {
+      gameGetNewGameTrigger = getNewGameTrigger;
+      gameWaitingForNewGame = waitingForNewGame;
+    },[getNewGameTrigger,waitingForNewGame]);
 
     useEffect(() => {
       let isMounted = true;               // note mutable flag
@@ -335,6 +383,7 @@
         if (isMounted)
         {
           setGamestates(response.data);    // add conditional check
+          globalIndexOffset = response.data.states[0]["globalIndex"]%config.gameFrames - response.data.states[0]["index"] +1;
           currentGamestate = 0;
         }
       }).catch(err => alert("Error: Could not retrieve gamestate information from the Snake Server\n"+err))
@@ -365,7 +414,7 @@
         }     // add conditional check
       }).catch(err => alert("Error: Could not retrieve division statistics from the Snake Server\n"+err))
       return () => { isMounted = false }; // use cleanup to toggle value, if unmounted
-    }, [selectedDivision]);
+    }, [selectedDivision, getNewGameTrigger]);
 
     useEffect(() => {
       gamePaused = paused;
@@ -379,7 +428,19 @@
       gameSelectedDivisionStr = selectedDivisionStr;
       gameDivisionInfo = divisionInfo;
       gameGamestates = gamestates;
-    }, [paused, ffwd, rewind, realtime, drawCells, currentStatsUser, currentStatsDivision, selectedDivision,selectedDivisionStr, divisionInfo, gamestates]);
+      gameGameNumber = gameNumber;
+
+    }, [paused, ffwd, rewind, realtime, drawCells, currentStatsUser, currentStatsDivision, selectedDivision,selectedDivisionStr, divisionInfo, gamestates,gameNumber]);
+
+    useEffect(() => {
+      gameReadEntireGame = readEntireGame;
+    }, [readEntireGame]);
+
+    useEffect(() => {
+      gameIsGameCached = isGameCached;
+    }, [isGameCached]);
+
+
 
     useEffect(() => {
       gameServerUp = serverUp;
@@ -475,7 +536,7 @@
               {
                 appleIndex=1;
               }
-              viewerContext.drawImage(appleImagesArr[appleIndex], startX + appleX * blockSize - blockSize / 3, startY + appleY * blockSize - blockSize / 3);
+              viewerContext.drawImage(appleImagesArr[appleIndex], startX + appleX * blockSize - blockSize / 3, startY + appleY * blockSize - blockSize / 2);
             }
             else {
               viewerContext.fillStyle = gameColours.apple;
@@ -616,10 +677,85 @@
             viewerContext.drawImage(snakeHeadImg, progBar.x + (currentGamestate / config.gameFrames) * (config.game_height * blockSize) - 3, progBar.y - 2);
           }
         }
+        else if(gameWaitingForNewGame){
+          viewerContext.fillStyle = gameColours.obstacles;
+          viewerContext.font = "35px Verdana";
+          var waitStr = "Waiting for next game";
+
+          waitingCount++;
+          if(waitingCount > 40)
+          {
+            waitingCount = 0;
+            dotCount++;
+            if(dotCount > 3)
+            {
+              dotCount = 0;
+            }
+          }
+
+          for(var d = 0; d <dotCount; d++ )
+          {
+            waitStr = waitStr+".";
+          }
+          viewerContext.fillText(waitStr, startX + 1*blockSize, startY + 25*blockSize);
+          
+          //Draw "Replay" square
+          var textColour = mouseOver ? gameColours.obstacles : gameColours.progressBarGreen;
+          var squareColour = mouseOver ? gameColours.progressBarGreen : gameColours.background;
+          viewerContext.strokeStyle = gameColours.border;
+          
+
+          viewerContext.fillStyle = squareColour;
+          viewerContext.fillRect(replayBox.x, replayBox.y, replayBox.width,replayBox.height);
+          viewerContext.strokeRect(replayBox.x, replayBox.y, replayBox.width,replayBox.height);
+
+          viewerContext.font = "bold 25px Verdana";
+          viewerContext.fillStyle = textColour;
+          viewerContext.fillText("Replay?", startX + 19*blockSize, startY + 38.5*blockSize);
+
+        }
       }
 
       requestAnimationFrame(drawGameboard);
     }
+
+    function handleMousemove(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var x = e.pageX - viewerX - 460;
+      var y = e.pageY - viewerY - 170;
+      if (y > replayBox.y && y < replayBox.y + replayBox.height
+        && x > replayBox.x && x < replayBox.x + replayBox.width) {
+        mouseOver = true;
+      }
+      else
+      {
+        mouseOver = false;
+      }
+      
+    }
+
+    function handleMouseClick(event) {
+
+      
+      var x = event.pageX - viewerX - 460;
+      var y = event.pageY - viewerY - 170;
+      
+      if (y > replayBox.y && y < replayBox.y + replayBox.height
+                 && x > replayBox.x && x < replayBox.x + replayBox.width) {
+                 console.log('clicked replayBox');
+                 gamePaused = false;
+                 gameRewind = false;
+                 gameFfwd = false;
+                 gameRealtime = false;
+                 setPaused(false); 
+                 setRewind(false); 
+                 setFfwd(false); 
+                 setRealtime(false); 
+                 switchToCachedGameFromCanvas();
+             }
+    }
+    
 
     function drawServerDown() {
       if (!gameServerUp) {
@@ -746,83 +882,126 @@
       if(scoreboardContext && gameState)
       {
 
-        scoreboardContext.fillStyle = gameColours.background;     //Clears area
-        scoreboardContext.fillRect(0,0, canvasWidth-100, canvasHeight-100);
-
-        scoreboardContext.font = "bold 17px Verdana";
-
-        scoreboardContext.fillStyle = gameColours.border;
-
-        scoreboardContext.fillText("Max",startX+ 2*blockSize,startY+2*blockSize);
-        scoreboardContext.fillText("Now",startX+ 9*blockSize,startY+2*blockSize);
-        scoreboardContext.fillText("Kills",startX+ 16*blockSize,startY+2*blockSize);
-        scoreboardContext.fillText("Name",startX+ 23*blockSize,startY+2*blockSize);
-
-        scoreboardContext.font = "17px Verdana";
-
-        let sortedSnakesByScore = sortSnakes(gameState.snake0,gameState.snake1,gameState.snake2,gameState.snake3);
-
-        let colorDict = {};
-
-        colorDict[gameState.snake0.name] = gameColours.snake0;
-        colorDict[gameState.snake1.name] = gameColours.snake1;
-        colorDict[gameState.snake2.name] = gameColours.snake2;
-        colorDict[gameState.snake3.name] = gameColours.snake3;
-
-        var yOffset = 1;
-        for(var i = 0; i < 4; i++)
+        if(gameState.state >=0)
         {
-          scoreboardContext.fillStyle = colorDict[sortedSnakesByScore[i].name];
+          scoreboardContext.fillStyle = gameColours.background;     //Clears area
+          scoreboardContext.fillRect(0,0, canvasWidth-110, canvasHeight-100);
+  
+          scoreboardContext.font = "bold 17px Verdana";
+  
+          scoreboardContext.fillStyle = gameColours.border;
+  
+          scoreboardContext.fillText("Max",startX+ 2*blockSize,startY+2*blockSize);
+          scoreboardContext.fillText("Now",startX+ 9*blockSize,startY+2*blockSize);
+          scoreboardContext.fillText("Kills",startX+ 16*blockSize,startY+2*blockSize);
+          scoreboardContext.fillText("Name",startX+ 23*blockSize,startY+2*blockSize);
+  
+          scoreboardContext.font = "17px Verdana";
+  
+          let sortedSnakesByScore = sortSnakes(gameState.snake0,gameState.snake1,gameState.snake2,gameState.snake3);
+  
+          let colorDict = {};
+  
+          colorDict[gameState.snake0.name] = gameColours.snake0;
+          colorDict[gameState.snake1.name] = gameColours.snake1;
+          colorDict[gameState.snake2.name] = gameColours.snake2;
+          colorDict[gameState.snake3.name] = gameColours.snake3;
+  
+          var yOffset = 1;
+          for(var i = 0; i < 4; i++)
+          {
+            cachedSortedSnakesByScore[i] = sortedSnakesByScore[i];
+            cachedSortedSnakesByScoreCol[i] = colorDict[sortedSnakesByScore[i].name];
 
-          var offset = yOffset*3+5;
-
-          scoreboardContext.fillText(sortedSnakesByScore[i].score,startX+ 2*blockSize,startY+offset*blockSize);
-          scoreboardContext.fillText(sortedSnakesByScore[i].length,startX+ 9*blockSize,startY+offset*blockSize);
-          scoreboardContext.fillText(sortedSnakesByScore[i].kills,startX+ 16*blockSize,startY+offset*blockSize);
-          scoreboardContext.fillText(sortedSnakesByScore[i].name,startX+ 23*blockSize,startY+offset*blockSize);
-
-          yOffset++;
+            scoreboardContext.fillStyle = colorDict[sortedSnakesByScore[i].name];
+  
+            var offset = yOffset*3+5;
+  
+            scoreboardContext.fillText(sortedSnakesByScore[i].score,startX+ 2*blockSize,startY+offset*blockSize);
+            scoreboardContext.fillText(sortedSnakesByScore[i].length,startX+ 9*blockSize,startY+offset*blockSize);
+            scoreboardContext.fillText(sortedSnakesByScore[i].kills,startX+ 16*blockSize,startY+offset*blockSize);
+            scoreboardContext.fillText(sortedSnakesByScore[i].name,startX+ 23*blockSize,startY+offset*blockSize);
+  
+            yOffset++;
+          }
+          scoreboardContext.fillStyle = gameColours.border;
+  
+          var date = new Date(gameGamestates.states[0]["timeCreated"]); // create Date object
+          var month = date.getMonth() + 1;
+          var day = date.getDate();
+          var hour = date.getHours();
+          var min = date.getMinutes();
+          var sec = date.getSeconds();
+  
+          var monthSpacer = "";
+          var daySpacer = "";
+          var hourSpacer = "";
+          var minSpacer = "";
+          var secSpacer = "";
+  
+          if(month < 10)
+          {
+            monthSpacer = "0";
+          }
+          if(day < 10)
+          {
+            daySpacer = "0";
+          }
+          if(hour < 10)
+          {
+            hourSpacer = "0";
+          }
+          if(min < 10)
+          {
+            minSpacer = "0";
+          }
+          if(sec < 10)
+          {
+            secSpacer = "0";
+          }
+  
+          var timeDate = (monthSpacer+month+"/"+daySpacer+day+" "+hourSpacer+hour+":"+minSpacer+min+":"+secSpacer+sec);
+  
+          scoreboardContext.fillText("Game state:      "+gameState.state+" / "+config.gameFrames,startX+ 2*blockSize,startY+26*blockSize);
+          scoreboardContext.fillText("Time started:    "+timeDate,startX+ 2*blockSize,startY+30*blockSize);
         }
-        scoreboardContext.fillStyle = gameColours.border;
+        else if(gameWaitingForNewGame){
+          
 
-        var date = new Date(gameGamestates.states[0]["timeCreated"]); // create Date object
-        var month = date.getMonth() + 1;
-        var day = date.getDate();
-        var hour = date.getHours();
-        var min = date.getMinutes();
-        var sec = date.getSeconds();
+          scoreboardContext.fillStyle = gameColours.background;     //Clears area
+          scoreboardContext.fillRect(0,0, canvasWidth-110, canvasHeight-100);
+          
+  
+          scoreboardContext.font = "bold 17px Verdana";
+  
+          scoreboardContext.fillStyle = gameColours.border;
+  
+          scoreboardContext.fillText("Max",startX+ 2*blockSize,startY+2*blockSize);
+          scoreboardContext.fillText("Now",startX+ 9*blockSize,startY+2*blockSize);
+          scoreboardContext.fillText("Kills",startX+ 16*blockSize,startY+2*blockSize);
+          scoreboardContext.fillText("Name",startX+ 23*blockSize,startY+2*blockSize);
+  
+          scoreboardContext.font = "17px Verdana";
+          var yOffset = 1;
 
-        var monthSpacer = "";
-        var daySpacer = "";
-        var hourSpacer = "";
-        var minSpacer = "";
-        var secSpacer = "";
-
-        if(month < 10)
-        {
-          monthSpacer = "0";
-        }
-        if(day < 10)
-        {
-          daySpacer = "0";
-        }
-        if(hour < 10)
-        {
-          hourSpacer = "0";
-        }
-        if(min < 10)
-        {
-          minSpacer = "0";
-        }
-        if(sec < 10)
-        {
-          secSpacer = "0";
-        }
-
-        var timeDate = (monthSpacer+month+"/"+daySpacer+day+" "+hourSpacer+hour+":"+minSpacer+min+":"+secSpacer+sec);
-
-        scoreboardContext.fillText("Game state:      "+gameState.state+" / "+config.gameFrames,startX+ 2*blockSize,startY+26*blockSize);
-        scoreboardContext.fillText("Time started:    "+timeDate,startX+ 2*blockSize,startY+30*blockSize);
+          for(var i = 0; i < 4; i++)
+          {
+            
+            scoreboardContext.fillStyle =  cachedSortedSnakesByScoreCol[i];
+  
+            var offset = yOffset*3+5;
+  
+            scoreboardContext.fillText(cachedSortedSnakesByScore[i].score,startX+ 2*blockSize,startY+offset*blockSize);
+            scoreboardContext.fillText(cachedSortedSnakesByScore[i].length,startX+ 9*blockSize,startY+offset*blockSize);
+            scoreboardContext.fillText(cachedSortedSnakesByScore[i].kills,startX+ 16*blockSize,startY+offset*blockSize);
+            scoreboardContext.fillText(cachedSortedSnakesByScore[i].name,startX+ 23*blockSize,startY+offset*blockSize);
+  
+            yOffset++;
+          }
+          scoreboardContext.fillStyle = gameColours.border;
+          
+          }
+        
 
       }
     }
@@ -867,6 +1046,59 @@
       }
     }
 
+    function switchToCachedGameFromButton()
+    {
+      console.log("triggered "+isGameCached);
+
+      if(isGameCached)
+      {
+
+        let tempGameStateArr = JSON.parse(sessionStorage.getItem("cachedGame")!);
+        if (tempGameStateArr && tempGameStateArr !== null) {
+          resetGamestate();
+          setGamestates(tempGameStateArr);
+          setWatchingCachedGame(true);
+          setReadEntireGame(false);
+        }
+        if(checkForNewGameLoopRef)
+        {
+          setWaitingForNewGame(false);
+          clearInterval(checkForNewGameLoopRef);
+        }
+        if(updateGameStateLoopRef)
+        {
+          clearInterval(updateGameStateLoopRef);
+        }
+        updateGameStateLoopRef = setInterval(updateGameState, config.game_speed);
+      }
+    }
+    function switchToCachedGameFromCanvas()
+    {
+      console.log("triggered "+gameIsGameCached);
+
+      if(gameIsGameCached)
+      {
+
+        let tempGameStateArr = JSON.parse(sessionStorage.getItem("cachedGame")!);
+        if (tempGameStateArr && tempGameStateArr !== null) {
+          resetGamestate();
+          setGamestates(tempGameStateArr);
+          setWatchingCachedGame(true);
+          setReadEntireGame(false);
+        }
+        if(checkForNewGameLoopRef)
+        {
+          setWaitingForNewGame(false);
+          clearInterval(checkForNewGameLoopRef);
+        }
+        if(updateGameStateLoopRef)
+        {
+          clearInterval(updateGameStateLoopRef);
+        }
+        updateGameStateLoopRef = setInterval(updateGameState, config.game_speed);
+      }
+    }
+
     function resetGamestate() {
       gameState =
       {
@@ -890,27 +1122,30 @@
       appleY = 0;
       lastAppleX = appleX;
       lastAppleY = appleY;
-      gameStateArr = {};
       realtimeGamestate = 0;
       currentGamestate = 0;
     }
 
+    function checkForNewGame()
+    {
+      setNewGameTrigger(gameGetNewGameTrigger+1);
+      if(Math.floor((gameGamestates.states[currentGamestate]["globalIndex"] - globalIndexOffset)/config.gameFrames) != gameGameNumber)
+      {
+        setGameNumber((Math.floor(gameGamestates.states[currentGamestate]["globalIndex"] - globalIndexOffset)/config.gameFrames))
+        setWaitingForNewGame(false);
+        clearInterval(checkForNewGameLoopRef);
+        updateGameStateLoopRef = setInterval(updateGameState, config.game_speed);
+      }
+    }
+
     function updateGameState() {
       //This will fetch the current game state from the server
-
-
 
       if(fakeGamestate)
       {
         gameGamestates = require('./fakeGamestate.json');
       }
       if (gameGamestates && gameGamestates!==null) {
-        if (realtimeGamestate > config.gameFrames) {
-          setGameRef(prevState => (prevState + 1));
-          cacheGame(gameStateArr);
-          resetGamestate();
-        }
-
       if (!gamePaused)
       {
         if (gameRewind || gameFfwd) {
@@ -925,9 +1160,15 @@
         }
         else  {
           currentGamestate++;
-          if(currentGamestate>config.gameFrames)
+          if(currentGamestate>=config.gameFrames)
           {
-            currentGamestate = 0;
+            setGameRef(prevState => (prevState + 1));
+            cacheGame(gameGamestates);
+            clearInterval(updateGameStateLoopRef);
+            setWaitingForNewGame(true);
+            checkForNewGameLoopRef = setInterval(checkForNewGame, 5000);
+            resetGamestate();
+            return;
           }
         }
 
@@ -936,6 +1177,10 @@
         if(!gameGamestates.states[currentGamestate] || gameGamestates.states[currentGamestate]===null)
         {
           return;
+        }
+        if(Math.floor((gameGamestates.states[currentGamestate]["globalIndex"] - globalIndexOffset)/config.gameFrames) != gameGameNumber)
+        {
+          setGameNumber(Math.floor((gameGamestates.states[currentGamestate]["globalIndex"] - globalIndexOffset)/config.gameFrames))
         }
         gameState = parseGamestate(gameGamestates.states[currentGamestate]["state"], gameGamestates.states[currentGamestate]["index"]);
         if(!gameState || gameState===null)
@@ -962,8 +1207,7 @@
           appleX = Math.floor(Math.random() * config.game_width);
           appleY = Math.floor(Math.random() * config.game_height);
         }
-
-        if(!readEntireGame && gameGamestates.count === config.gameFrames)
+        if(!gameReadEntireGame && gameGamestates.count === config.gameFrames)
         {
           setReadEntireGame(true);
           realtimeGamestate = config.gameFrames;
@@ -972,7 +1216,7 @@
             setRealtime(false);
           }
         }
-        else{
+        else if(!gameReadEntireGame){
           realtimeGamestate++;
         }
 
@@ -992,13 +1236,14 @@
       setIndex(1);
       setCurrentStatsDivision(gameCurrStatsDivisionEmpty);
       setCurrentStatsUser(playersStats[e]);
+      setWatchingCachedGame(false);
+      gamestateMulti = 1;
 
       if(!testing && serverUp)
       {
         var positions = playersStats[e].positions.split(',');
         let xAxisArr = new Array(positions.length);
         let yAxisArr:number[] = new Array(positions.length);
-        console.log(playersStats[e].username);
 
         for(var counter =0;counter < positions.length; counter++)
         {
@@ -1011,17 +1256,21 @@
             data: yAxisArr
           }
         ];
+        rankGraphVis = true;
       }
     }
 
     function handleDivisionStatsClick(e) {
       setIndex(1);
       setCurrentStatsUser(gameCurrStatsUserEmpty);
-      setCurrentStatsDivision(divisionStats[selectedDivision]);
+      setCurrentStatsDivision(divisionStats["Division "+selectedDivision]);
+      rankGraphVis = false;
     }
 
     function handleDivisionClick(e) {
       setIndex(0);
+      setWatchingCachedGame(false);
+      gamestateMulti = 1;
       setSelectedDivision(e);
       setSelectedDivisionStr("Division " + e +(e > divisionPlanets.length ? "" : " - "+divisionPlanets[divisionPlanets.length-e-1]));
     }
@@ -1100,7 +1349,7 @@
         return players && players.map(({ id, name, score, currentGame }) => {
           return (
             <tr key={id}>
-              <td>{Math.round(10000 * score) / 10000}</td>
+              <td >{Math.round(10000 * score) / 10000}</td>
               <td className='opration'>
                 <a className='button' onClick={() => handleUsernameClick(name)}>{name}</a>
               </td>
@@ -1129,6 +1378,9 @@
     function logChange(event) {
       setSelectedDivision(event.target.value.split(" ")[1]);
       setSelectedDivisionStr(event.target.value);
+      setWatchingCachedGame(false);
+      gamestateMulti = 1;
+      setIndex(0);
     };
 
     const renderDivisionSelect = () => {
@@ -1167,10 +1419,11 @@
 
 </div>
             <ul className="nav-links">
-              <li><a href="">Watch</a></li>
               <li><a href="https://snake.wits.ai/">Home</a></li>
               <li><a href="https://snake.wits.ai/docs">Docs</a></li>
-              <li><a href="https://snake.wits.ai/downloads">Downloads</a></li>
+              <li><a href="https://snake.wits.ai/download">Download</a></li>
+              <li><a href="https://snake.wits.ai/submit">Submit</a></li>
+              <li><a href="">Watch</a></li>
               <li><a href="https://snake.wits.ai/help">Help</a></li>
             </ul>
         </nav>
@@ -1179,7 +1432,7 @@
         <div className="column left">
         <canvas
          ref={scoreboardRef}
-         width={canvasWidth-100}
+         width={canvasWidth-110}
          height={canvasHeight-200}
          style={{
            border: '2px solid #000',
@@ -1197,7 +1450,7 @@
                   <div>
                     <h2 className="centered" style={{
                       marginTop: 10
-                    }}>{serverUp ? "Current Game" : "Connecting to server..."}</h2>
+                    }}>{serverUp && (gameGameNumber!=-1)? (watchingCachedGame ? "Cached Game ("+gameNumber+")" : "Current Game ("+gameNumber+")") : "Connecting to server..."}</h2>
                     <div
                       className="centered">
                       {serverUp ? <canvas
@@ -1249,6 +1502,7 @@
                       type="line"
                       width={canvasWidth}
                       height="100"
+                      style={{ visibility: rankGraphVis ? "visible" : "hidden" }}
                     /> : null}
                       </div>: <canvas
                         id="serverDown2"
@@ -1294,11 +1548,11 @@
                         gamestateMulti = 2;
                         setPaused(false); setRewind(false); setFfwd(true); setRealtime(false);
                       }}}><i className="material-icons">fast_forward</i></button>
-                    <button style={{ visibility: (realtime || (index !== 0 || !serverUp)) ? "hidden" : "visible" }} onClick={() => { gamestateMulti = 1;setPaused(false); setRewind(false); setFfwd(false); setRealtime(true); currentGamestate = realtimeGamestate }}>{<i className="material-icons">skip_next</i>}</button>
+                    <button style={{ visibility: (realtime || (index !== 0 || !serverUp) || watchingCachedGame) ? "hidden" : "visible" }} onClick={() => { gamestateMulti = 1;setPaused(false); setRewind(false); setFfwd(false); setRealtime(true); currentGamestate = realtimeGamestate }}>{<i className="material-icons">skip_next</i>}</button>
                   </div>
                   <div style={{ visibility: (index === 0 && serverUp) ? "visible" : "hidden" }} id="viewerLookControls" className="buttonscenteredSingle">
                     <button onClick={() => { setDrawCells(prevState => !prevState) }}><i className="material-icons">{drawCells ? "grid_on" : "grid_off"}</i></button>
-                    <button style={{ visibility: (index === 0 && serverUp && isGameCached) ? "visible" : "collapse" }} onClick={() => { setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); currentGamestate = startedViewingGamestate; }}><i className="material-icons">settings_backup_restore</i></button>
+                    <button style={{ visibility: (index === 0 && serverUp && isGameCached && !watchingCachedGame) ? "visible" : "collapse" }} onClick={() => { setPaused(false); setRewind(false); setFfwd(false); setRealtime(false); switchToCachedGameFromButton(); }}><i className="material-icons">settings_backup_restore</i></button>
                   </div>
             </div>
 
@@ -1313,8 +1567,10 @@
               </button>
             </div>
             <h2 id='leader'>Leaderboard</h2>
-            <table id='player'>
-              <thead>
+
+            <table id='player' style={{marginLeft: 70,}}>
+              <h2></h2>
+              <thead >
                 <tr>{renderTableHeader()}</tr>
               </thead>
               <tbody>
